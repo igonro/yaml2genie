@@ -1,0 +1,6 @@
+text_instructions:
+  - id: "00000000000000000000000000000010"
+    content: Use fiscal periods.
+sql_functions:
+  - id: "00000000000000000000000000000012"
+    identifier: sales.analytics.fiscal_quarter

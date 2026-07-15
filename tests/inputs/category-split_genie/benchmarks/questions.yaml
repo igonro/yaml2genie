@@ -1,0 +1,5 @@
+- id: "00000000000000000000000000000002"
+  question: What is average order value?
+  answer:
+    - format: SQL
+      content: SELECT AVG(order_amount) FROM sales.analytics.orders

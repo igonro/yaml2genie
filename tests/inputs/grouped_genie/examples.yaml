@@ -1,0 +1,27 @@
+joins:
+  - id: "00000000000000000000000000000013"
+    left: {identifier: sales.analytics.orders, alias: orders}
+    right: {identifier: sales.analytics.customers, alias: customers}
+    sql:
+      - "`orders`.`customer_id` = `customers`.`customer_id`"
+      - "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+    comment: Orders belong to customers.
+    instruction: Use when customer attributes are requested.
+queries:
+  - id: "00000000000000000000000000000011"
+    question: Show sales for a region.
+    sql: SELECT SUM(order_amount) FROM sales.analytics.orders WHERE region = :region
+    parameters:
+      - name: region
+        type_hint: STRING
+        description: Region to filter.
+        default_value: {values: [EMEA]}
+    usage_guidance: Use for geographic sales questions.
+filters:
+  - id: "00000000000000000000000000000014"
+    alias: high_value
+    sql: orders.order_amount > 1000
+    display_name: high value orders
+    synonyms: [large orders, big purchases]
+    comment: Filters to large orders.
+    instruction: Use for high-value requests.

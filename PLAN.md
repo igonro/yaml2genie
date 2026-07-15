@@ -129,13 +129,13 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** The same domain model can be populated from progressively more granular YAML without hidden merge behavior.
 
-- [ ] Define a required root manifest, for example `genie.yaml`, containing the serialized version and explicit layout metadata. Do not infer meaning from arbitrary filenames when a manifest can state it.
-- [ ] Implement layout level 1: grouped files such as `sources.yaml`, `instructions.yaml`, `examples.yaml`, and optional `benchmarks.yaml`.
-- [ ] Implement layout level 2: category files such as `sources/tables.yaml`, `sources/metric_views.yaml`, `examples/joins.yaml`, `examples/queries.yaml`, `examples/filters.yaml`, `examples/expressions.yaml`, and `examples/measures.yaml`. Use contract names such as `metric_views`, not ambiguous aliases such as `views` or POC-only `calculated_fields`.
-- [ ] Define collection semantics precisely: collection files concatenate into one category; singleton values come from the manifest; missing optional files mean empty collections; duplicate identifiers/IDs are errors; no deep merge or last-file-wins behavior.
-- [ ] Make discovery deterministic and independent of filesystem enumeration. Include source-relative paths in errors and in fallback stable identities.
-- [ ] Keep level 1 and level 2 loaders as adapters that return the same candidate document consumed by Phase 2. Do not duplicate semantic validation in each loader.
-- [ ] Add representative fixtures named `centralized_genie.yaml`, `grouped_genie/`, and `category_split_genie/`, including unsorted filenames and cross-file references.
+- [x] Define a required root manifest, for example `genie.yaml`, containing the serialized version and explicit layout metadata. Do not infer meaning from arbitrary filenames when a manifest can state it.
+- [x] Implement layout level 1: grouped files such as `sources.yaml`, `instructions.yaml`, `examples.yaml`, and optional `benchmarks.yaml`.
+- [x] Implement layout level 2: category files such as `sources/tables.yaml`, `sources/metric_views.yaml`, `examples/joins.yaml`, `examples/queries.yaml`, `examples/filters.yaml`, `examples/expressions.yaml`, and `examples/measures.yaml`. Use contract names such as `metric_views`, not ambiguous aliases such as `views` or POC-only `calculated_fields`.
+- [x] Define collection semantics precisely: collection files concatenate into one category; singleton values come from the manifest; missing optional files mean empty collections; duplicate identifiers/IDs are errors; no deep merge or last-file-wins behavior.
+- [x] Make discovery deterministic and independent of filesystem enumeration. Include source-relative paths in errors and in fallback stable identities.
+- [x] Keep level 1 and level 2 loaders as adapters that return the same candidate document consumed by Phase 2. Do not duplicate semantic validation in each loader.
+- [x] Add representative fixtures named `centralized_genie.yaml`, `grouped_genie/`, and `category_split_genie/`, including unsorted filenames and cross-file references.
 
 **Tests and acceptance:** Each decentralized fixture produces the same normalized JSON as its centralized equivalent; missing optional files, duplicate items, unknown categories, and broken references have focused tests.
 

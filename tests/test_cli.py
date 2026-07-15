@@ -20,6 +20,15 @@ def test_validate_accepts_definition_without_writing(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == []
 
 
+def test_validate_accepts_grouped_definition_directory() -> None:
+    input_path = FIXTURE_ROOT / "inputs/grouped_genie"
+
+    result = runner.invoke(app, ["validate", str(input_path)])
+
+    assert result.exit_code == 0
+    assert result.stdout == "Valid Genie Agent definition.\n"
+
+
 def test_build_writes_expected_deterministic_json(tmp_path: Path) -> None:
     input_path = FIXTURE_ROOT / "inputs/minimal.yaml"
     expected = (FIXTURE_ROOT / "artifacts/minimal.json").read_bytes()

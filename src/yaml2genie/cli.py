@@ -12,7 +12,10 @@ from yaml2genie.models import DefinitionDocument
 from yaml2genie.rendering import write_json_atomic, write_yaml_atomic
 
 app = typer.Typer(no_args_is_help=True)
-InputPath = Annotated[Path, typer.Argument(exists=True, dir_okay=False)]
+InputPath = Annotated[
+    Path,
+    typer.Argument(exists=True, file_okay=True, dir_okay=True),
+]
 
 
 def _exit_with_error(path: Path, report: ErrorReport) -> Never:

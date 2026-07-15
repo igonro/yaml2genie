@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -10,6 +11,7 @@ from yaml2genie.models import DefinitionDocument, DefinitionInput
 JsonObject = dict[str, Any]
 CollectionKey = str | tuple[str, ...]
 LocatedValue = tuple[CollectionKey, str]
+SourceLocations = Mapping[tuple[str, ...], list[str]]
 
 
 @dataclass(frozen=True)
@@ -132,13 +134,19 @@ def _collection(document: JsonObject, path: tuple[str, ...]) -> list[JsonObject]
     return cast("list[JsonObject]", value) if isinstance(value, list) else []
 
 
-def _generated_id(path: tuple[str, ...], item: JsonObject) -> str:
+def _generated_id(
+    path: tuple[str, ...],
+    item: JsonObject,
+    source_identity: str | None,
+) -> str:
     stable_key = item.get("stable_key")
     identity = {
         "category": ".".join(path),
         "identity": (
             {"stable_key": stable_key}
             if stable_key is not None
+            else {"source_identity": source_identity}
+            if source_identity is not None
             else {
                 "content": {
                     key: value
@@ -175,14 +183,29 @@ def _normalize_collection(
     items: list[JsonObject],
     descriptor: CollectionDescriptor,
     values_by_scope: dict[str, list[LocatedValue]],
+    source_locations: list[str] | None = None,
 ) -> None:
     stable_keys: list[LocatedValue] = []
     for index, item in enumerate(items):
-        location = f"{descriptor.source_path}[{index}]"
+        model_location = f"{descriptor.source_path}[{index}]"
+        source_location = (
+            source_locations[index]
+            if source_locations is not None and index < len(source_locations)
+            else None
+        )
+        location = (
+            f"{source_location}: {model_location}"
+            if source_location is not None
+            else model_location
+        )
         if "stable_key" in item:
             stable_keys.append((item["stable_key"], f"{location}.stable_key"))
         if descriptor.id_required:
-            item["id"] = item.get("id") or _generated_id(descriptor.path, item)
+            item["id"] = item.get("id") or _generated_id(
+                descriptor.path,
+                item,
+                source_location,
+            )
         item.pop("stable_key", None)
         if descriptor.uniqueness_scope and descriptor.uniqueness_key:
             values_by_scope.setdefault(descriptor.uniqueness_scope, []).append(
@@ -195,10 +218,24 @@ def _normalize_collection(
     items.sort(key=lambda item: _item_key(item, descriptor.sort_key))
 
 
-def _validate_joins(document: JsonObject) -> None:
+def _validate_joins(
+    document: JsonObject,
+    source_locations: SourceLocations,
+) -> None:
     joins = _collection(document, ("instructions", "join_specs"))
     for index, join in enumerate(joins):
-        path = f"instructions.join_specs[{index}]"
+        model_path = f"instructions.join_specs[{index}]"
+        join_locations = source_locations.get(("instructions", "join_specs"))
+        source_location = (
+            join_locations[index]
+            if join_locations is not None and index < len(join_locations)
+            else None
+        )
+        path = (
+            f"{source_location}: {model_path}"
+            if source_location is not None
+            else model_path
+        )
         left_alias = join["left"]["alias"]
         right_alias = join["right"]["alias"]
         if left_alias == right_alias:
@@ -224,10 +261,14 @@ def _validate_joins(document: JsonObject) -> None:
             raise SemanticValidationError(msg)
 
 
-def normalize(candidate: DefinitionInput) -> DefinitionDocument:
+def normalize(
+    candidate: DefinitionInput,
+    source_locations: SourceLocations | None = None,
+) -> DefinitionDocument:
     document = candidate.model_dump(exclude_none=True)
+    source_locations = source_locations or {}
     values_by_scope: dict[str, list[LocatedValue]] = {}
-    _validate_joins(document)
+    _validate_joins(document, source_locations)
 
     for descriptor in COLLECTIONS:
         if descriptor.path in {
@@ -239,6 +280,7 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
             _collection(document, descriptor.path),
             descriptor,
             values_by_scope,
+            source_locations.get(descriptor.path),
         )
 
     tables = _collection(document, ("data_sources", "tables"))
@@ -262,6 +304,7 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
             columns_with_identifiers,
             column_descriptor,
             values_by_scope,
+            source_locations.get(("data_sources", "tables")),
         )
         columns[:] = [
             {key: value for key, value in column.items() if key != "identifier"}
@@ -273,7 +316,12 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
         for descriptor in COLLECTIONS
         if descriptor.path == ("data_sources", "tables")
     )
-    _normalize_collection(tables, table_descriptor, values_by_scope)
+    _normalize_collection(
+        tables,
+        table_descriptor,
+        values_by_scope,
+        source_locations.get(("data_sources", "tables")),
+    )
 
     metric_views = _collection(document, ("data_sources", "metric_views"))
     for metric_view in metric_views:
@@ -293,7 +341,12 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
         for descriptor in COLLECTIONS
         if descriptor.path == ("data_sources", "metric_views")
     )
-    _normalize_collection(metric_views, metric_view_descriptor, values_by_scope)
+    _normalize_collection(
+        metric_views,
+        metric_view_descriptor,
+        values_by_scope,
+        source_locations.get(("data_sources", "metric_views")),
+    )
 
     for scope, values in values_by_scope.items():
         _require_unique(values, scope)

@@ -10,16 +10,17 @@ Once configured, add dynamic project badges such as:
 ![Coverage](https://img.shields.io/codecov/...)]
 -->
 
-Compile a centralized YAML definition into deterministic Databricks Genie Agent
-`serialized_space` version 2 JSON.
+Compile centralized or explicitly decentralized YAML definitions into
+deterministic Databricks Genie Agent `serialized_space` version 2 JSON.
 
 ---
 
 ## Overview
 
-Phase 1 supports sample questions, tables and column configurations, text
-instructions, example question SQL, joins, and filter, expression, and measure
-SQL snippets. The compiler rejects unknown fields instead of discarding them.
+The compiler supports the documented version 2 fields and rejects unknown
+fields instead of discarding them. A source may be one YAML file or a directory
+with a required `genie.yaml` manifest that declares `layout: grouped` or
+`layout: category-split`.
 
 Generated JSON is stable across repeated builds. Explicit valid IDs are
 preserved, omitted IDs are generated deterministically, and service-required
@@ -30,6 +31,7 @@ collections are sorted without rewriting the source YAML.
 ```bash
 uv run yaml2genie validate tests/inputs/minimal.yaml
 uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
+uv run yaml2genie build tests/inputs/grouped_genie --output definition.json
 uv run yaml2genie decompile definition.json --output definition.yaml
 ```
 

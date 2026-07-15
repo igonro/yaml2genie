@@ -1,16 +1,15 @@
 import json
 from pathlib import Path
 
-import yaml
-
+from yaml2genie.loaders import load_yaml_source
 from yaml2genie.models import DefinitionDocument, DefinitionInput
 from yaml2genie.normalization import normalize
 
 
 def compile_definition(path: Path) -> DefinitionDocument:
-    source: object = yaml.safe_load(path.read_text(encoding="utf-8"))
-    candidate = DefinitionInput.model_validate(source)
-    return normalize(candidate)
+    source = load_yaml_source(path)
+    candidate = DefinitionInput.model_validate(source.candidate)
+    return normalize(candidate, source_locations=source.source_locations)
 
 
 def decompile_definition(path: Path) -> DefinitionDocument:

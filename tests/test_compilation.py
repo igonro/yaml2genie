@@ -48,6 +48,147 @@ def test_all_documented_v2_fields_compile_to_expected_definition() -> None:
     assert definition.model_dump(exclude_none=True) == expected
 
 
+@pytest.mark.parametrize("layout", ["grouped", "category-split"])
+def test_decentralized_layout_compiles_to_centralized_artifact(
+    layout: str,
+) -> None:
+    expected = compile_definition(
+        FIXTURE_ROOT / "inputs/centralized_genie.yaml",
+    ).model_dump(exclude_none=True)
+
+    definition = compile_definition(FIXTURE_ROOT / "inputs" / f"{layout}_genie")
+
+    assert definition.model_dump(exclude_none=True) == expected
+
+
+def test_decentralized_fallback_ids_do_not_depend_on_absolute_root(
+    tmp_path: Path,
+) -> None:
+    roots = [tmp_path / "first/grouped_genie", tmp_path / "second/grouped_genie"]
+    for root in roots:
+        root.mkdir(parents=True)
+        (root / "genie.yaml").write_text(
+            "version: 2\nlayout: grouped\n",
+            encoding="utf-8",
+        )
+        (root / "config.yaml").write_text(
+            "sample_questions:\n  - question: How many orders?\n",
+            encoding="utf-8",
+        )
+
+    documents = [compile_definition(root) for root in roots]
+
+    assert documents[0] == documents[1]
+
+
+def test_decentralized_omitted_ids_are_stable_for_each_relative_source_path(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "grouped_genie"
+    root.mkdir()
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: grouped\n",
+        encoding="utf-8",
+    )
+    (root / "config.yaml").write_text(
+        "sample_questions:\n  - question: How many orders?\n",
+        encoding="utf-8",
+    )
+
+    first = compile_definition(root)
+    second = compile_definition(root)
+
+    assert first == second
+    assert first.config is not None
+    assert first.config.sample_questions is not None
+    assert first.config.sample_questions[0].id
+
+
+def test_decentralized_layout_treats_missing_optional_files_as_empty(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "grouped_genie"
+    root.mkdir()
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: grouped\n",
+        encoding="utf-8",
+    )
+
+    definition = compile_definition(root)
+
+    assert definition.model_dump(exclude_none=True) == {"version": 2}
+
+
+def test_decentralized_duplicate_ids_name_both_source_files(tmp_path: Path) -> None:
+    root = tmp_path / "category_split_genie"
+    (root / "config").mkdir(parents=True)
+    (root / "benchmarks").mkdir()
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: category-split\n",
+        encoding="utf-8",
+    )
+    shared_id = "00000000000000000000000000000001"
+    (root / "config" / "sample_questions.yaml").write_text(
+        f'- id: "{shared_id}"\n  question: Sample question\n',
+        encoding="utf-8",
+    )
+    (root / "benchmarks" / "questions.yaml").write_text(
+        '- id: "'
+        f'{shared_id}"\n'
+        "  question: Benchmark question\n"
+        "  answer:\n"
+        "    - format: SQL\n"
+        "      content: SELECT 1\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(root)
+
+    message = str(error.value)
+    assert "config/sample_questions.yaml" in message
+    assert "benchmarks/questions.yaml" in message
+
+
+def test_decentralized_layout_rejects_unknown_category_file(tmp_path: Path) -> None:
+    root = tmp_path / "category_split_genie"
+    (root / "sources").mkdir(parents=True)
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: category-split\n",
+        encoding="utf-8",
+    )
+    (root / "sources" / "views.yaml").write_text("[]\n", encoding="utf-8")
+
+    with pytest.raises(DefinitionError, match=r"sources/views\.yaml"):
+        compile_definition(root)
+
+
+def test_decentralized_broken_join_reference_names_source_file(tmp_path: Path) -> None:
+    root = tmp_path / "category_split_genie"
+    (root / "examples").mkdir(parents=True)
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: category-split\n",
+        encoding="utf-8",
+    )
+    (root / "examples" / "joins.yaml").write_text(
+        "- left:\n"
+        "    identifier: sales.analytics.orders\n"
+        "    alias: orders\n"
+        "  right:\n"
+        "    identifier: sales.analytics.customers\n"
+        "    alias: customers\n"
+        "  sql:\n"
+        "    - '`orders`.`customer_id` = `accounts`.`customer_id`'\n"
+        "    - '--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--'\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(root)
+
+    assert "examples/joins.yaml" in str(error.value)
+
+
 def test_normalized_output_is_sorted_without_rewriting_source() -> None:
     source_path = FIXTURE_ROOT / "inputs/unsorted.yaml"
     original_source = source_path.read_text(encoding="utf-8")

@@ -20,6 +20,23 @@ PHASE_0_FIXTURES = (
     Path("inputs/unsupported_version.yaml"),
     Path("inputs/phase1_supported.yaml"),
     Path("inputs/phase4_supported.yaml"),
+    Path("inputs/centralized_genie.yaml"),
+    Path("inputs/grouped_genie/genie.yaml"),
+    Path("inputs/grouped_genie/config.yaml"),
+    Path("inputs/grouped_genie/sources.yaml"),
+    Path("inputs/grouped_genie/instructions.yaml"),
+    Path("inputs/grouped_genie/examples.yaml"),
+    Path("inputs/grouped_genie/benchmarks.yaml"),
+    Path("inputs/category-split_genie/genie.yaml"),
+    Path("inputs/category-split_genie/config/sample_questions.yaml"),
+    Path("inputs/category-split_genie/sources/tables.yaml"),
+    Path("inputs/category-split_genie/sources/metric_views.yaml"),
+    Path("inputs/category-split_genie/instructions/text_instructions.yaml"),
+    Path("inputs/category-split_genie/instructions/sql_functions.yaml"),
+    Path("inputs/category-split_genie/examples/joins.yaml"),
+    Path("inputs/category-split_genie/examples/queries.yaml"),
+    Path("inputs/category-split_genie/examples/filters.yaml"),
+    Path("inputs/category-split_genie/benchmarks/questions.yaml"),
     Path("inputs/malformed.json"),
     Path("inputs/missing_version.json"),
     Path("inputs/missing_item_id.json"),
@@ -46,7 +63,7 @@ def test_phase_0_inventory_declares_every_fixture() -> None:
     actual = {
         path.relative_to(FIXTURE_ROOT)
         for directory in (FIXTURE_ROOT / "inputs", FIXTURE_ROOT / "artifacts")
-        for path in directory.iterdir()
+        for path in directory.rglob("*")
         if path.is_file()
     }
 

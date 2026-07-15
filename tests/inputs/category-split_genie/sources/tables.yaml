@@ -1,0 +1,4 @@
+- identifier: sales.analytics.orders
+  column_configs:
+    - column_name: order_amount
+      synonyms: [revenue, sales]
