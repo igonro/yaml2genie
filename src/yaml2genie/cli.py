@@ -1,5 +1,6 @@
 import difflib
 import json
+from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Annotated, Literal, Never
 
@@ -26,7 +27,7 @@ from yaml2genie.rendering import (
     write_yaml_atomic,
 )
 
-VERSION = "0.1.0"
+VERSION = package_version("yaml2genie")
 Format = Literal["auto", "json", "yaml"]
 app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False)
 InputPath = Annotated[
