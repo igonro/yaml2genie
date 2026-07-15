@@ -174,11 +174,11 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** The generated artifact is easy to place in a Declarative Automation Bundle and the project can evolve when Databricks changes the contract.
 
-- [ ] Add a small bundle fixture showing `resources.genie_spaces.<name>.file_path` with `title` and `warehouse_id`, clearly separating it from the serialized content. Do not require Databricks credentials in tests.
-- [ ] Document that `file_path` and inline `serialized_space` are mutually exclusive, that file content is inlined during deployment, and that the resource uses the direct deployment engine.
-- [ ] Add a schema compatibility check against a checked-in official-shape fixture and, when available in CI, a non-destructive `databricks bundle validate` smoke test. Keep the package usable without the Databricks CLI.
-- [ ] Re-read the primary Databricks references before every schema-version feature. Update the contract note, compatibility matrix, fixtures, and migration adapter together.
-- [ ] Define a deprecation policy for old names such as Genie Space and for fields removed or renamed by Databricks. Never silently reinterpret a versioned document.
+- [x] Add a small bundle fixture showing `resources.genie_spaces.<name>.file_path` with `title` and `warehouse_id`, clearly separating it from the serialized content. Do not require Databricks credentials in tests.
+- [x] Document that `file_path` and inline `serialized_space` are mutually exclusive, that file content is inlined during deployment, and that the resource uses the direct deployment engine.
+- [x] Add a schema compatibility check against a checked-in official-shape fixture and, when available in CI, a non-destructive `databricks bundle validate` smoke test. Keep the package usable without the Databricks CLI.
+- [x] Re-read the primary Databricks references before every schema-version feature. Update the contract note, compatibility matrix, fixtures, and migration adapter together.
+- [x] Define a deprecation policy for old names such as Genie Space and for fields removed or renamed by Databricks. Never silently reinterpret a versioned document.
 
 **Tests and acceptance:** A generated JSON fixture can be referenced by a bundle example; offline tests remain deterministic; version and migration behavior is covered without network calls.
 

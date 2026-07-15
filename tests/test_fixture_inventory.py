@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
+
+from yaml2genie import compile_definition
 
 SERIALIZED_VERSION = 2
 MATRIX_COLUMN_COUNT = 10
@@ -62,10 +65,12 @@ PHASE_0_FIXTURES = (
     Path("inputs/missing_item_id.json"),
     Path("inputs/unsupported_version.json"),
     Path("inputs/unsupported_field.json"),
+    Path("inputs/bundle/databricks.yml"),
     Path("artifacts/minimal.json"),
     Path("artifacts/phase1_supported.json"),
     Path("artifacts/phase4_supported.json"),
     Path("artifacts/phase1_supported.provenance.md"),
+    Path("artifacts/phase4_supported.provenance.md"),
 )
 JSON_ARTIFACTS = (
     Path("artifacts/minimal.json"),
@@ -127,3 +132,37 @@ def test_contract_freezes_phase_1_boundary_decisions() -> None:
         "`file_path` and inline `serialized_space` are mutually exclusive"
     )
     assert mutual_exclusion_rule in contract
+
+
+def test_bundle_fixture_references_generated_serialized_definition() -> None:
+    bundle_path = FIXTURE_ROOT / "inputs/bundle/databricks.yml"
+    bundle = yaml.safe_load(bundle_path.read_text(encoding="utf-8"))
+
+    resource = bundle["resources"]["genie_spaces"]["sales_assistant"]
+    artifact_path = (bundle_path.parent / resource["file_path"]).resolve()
+    generated = compile_definition(FIXTURE_ROOT / "inputs/minimal.yaml")
+
+    assert bundle["bundle"]["engine"] == "direct"
+    assert resource["title"] == "Sales Assistant"
+    assert resource["warehouse_id"] == "${var.warehouse_id}"
+    assert "serialized_space" not in resource
+    assert json.loads(
+        artifact_path.read_text(encoding="utf-8")
+    ) == generated.model_dump(
+        exclude_none=True,
+    )
+
+
+def test_official_shape_fixture_remains_compatible_with_generated_json() -> None:
+    official_shape = json.loads(
+        (FIXTURE_ROOT / "artifacts/phase4_supported.json").read_text(
+            encoding="utf-8",
+        ),
+    )
+    generated = compile_definition(FIXTURE_ROOT / "inputs/phase4_supported.yaml")
+
+    assert official_shape["version"] == SERIALIZED_VERSION
+    assert {"config", "data_sources", "instructions", "benchmarks"} <= set(
+        official_shape,
+    )
+    assert generated.model_dump(exclude_none=True) == official_shape

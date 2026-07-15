@@ -81,6 +81,29 @@ exit code 2, schema errors 3, semantic errors 4, and output errors 5.
 
 ---
 
+## Bundle Integration
+
+Use generated JSON as the `file_path` for a Declarative Automation Bundle Genie
+resource. Deployment metadata such as `title` and `warehouse_id` belongs to the
+bundle resource, not the serialized Agent definition:
+
+```yaml
+resources:
+    genie_spaces:
+        sales_assistant:
+            title: Sales Assistant
+            warehouse_id: ${var.warehouse_id}
+            file_path: resources/sales_assistant.geniespace.json
+```
+
+`file_path` and inline `serialized_space` are mutually exclusive. The
+Databricks CLI reads and inlines `file_path` content during deployment; Genie
+resources use the direct deployment engine. yaml2genie does not require the
+Databricks CLI or workspace credentials. When it is installed in CI, run the
+non-destructive `databricks bundle validate` as a deployment smoke test.
+
+---
+
 ## Local Development
 
 Follow these steps to get the project running on your machine.

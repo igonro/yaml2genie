@@ -172,6 +172,26 @@ inlines file content during deployment and rejects a resource that supplies
 both. Genie resources use the direct deployment engine, as shown by the
 [official bundle example](https://github.com/databricks/bundle-examples/tree/main/knowledge_base/genie_space_nyc_taxi).
 
+## Schema evolution policy
+
+Before accepting a Databricks schema-version feature, re-read the primary
+serialized-definition and bundle references listed above. Update this contract
+matrix, the official-shape fixture, focused compatibility tests, and any
+migration adapter in one change. A versioned document is never silently
+reinterpreted: unsupported versions fail with their declared version, and a
+future migration must be explicit about both source and target versions.
+
+`tests/artifacts/phase4_supported.json` is the checked-in official-shape
+compatibility fixture for version 2. It remains an offline check; CI may run
+the non-destructive `databricks bundle validate` smoke test when the Databricks
+CLI is installed, but yaml2genie does not require it.
+
+Databricks' old service-owned term, "Genie Space", remains only where an API or
+bundle key requires it, including `genie_spaces` and `serialized_space`.
+yaml2genie documentation uses "Genie Agent" elsewhere. Removed or renamed
+fields must either be rejected with an upgrade path or handled by an explicit,
+documented migration adapter; they are never quietly mapped to a replacement.
+
 ## Local policies, not service requirements
 
 Deterministic generated IDs, YAML scalar shorthand, preservation of author

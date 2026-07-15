@@ -1,0 +1,14 @@
+bundle:
+  name: sales-assistant
+  engine: direct
+
+variables:
+  warehouse_id:
+    description: SQL warehouse used by the Genie Agent
+
+resources:
+  genie_spaces:
+    sales_assistant:
+      title: Sales Assistant
+      warehouse_id: ${var.warehouse_id}
+      file_path: ../../artifacts/minimal.json
