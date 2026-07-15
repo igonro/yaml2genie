@@ -160,11 +160,11 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** The tool feels like a dependable CLI rather than a collection of library entry points.
 
-- [ ] Finalize commands and help text: `validate`, `build`, `decompile`, and `check` are the core set. `check` compares generated output with a committed artifact and prints a focused diff without writing.
-- [ ] Support explicit `--layout`/`--format` options plus safe auto-detection where it is unambiguous. Define stdin/stdout behavior, path handling, exit codes, and overwrite flags in the help and README.
-- [ ] Add version output, quiet mode, optional verbose diagnostics, and readable Rich/Typer errors while keeping non-interactive CI output stable. Do not make color or network access mandatory.
-- [ ] Add shell-level CLI integration tests for success, invalid input, stale artifact, dry run, and output path failures. Keep pure model tests separate from command tests.
-- [ ] Update the package entry point, README installation/examples, Makefile targets, and CI instructions to use `yaml2genie` consistently. Remove skeleton references such as the placeholder greeting and stale `genie2yaml` command names.
+- [x] Finalize commands and help text: `validate`, `build`, `decompile`, and `check` are the core set. `check` compares generated output with a committed artifact and prints a focused diff without writing.
+- [x] Support explicit `--layout`/`--format` options plus safe auto-detection where it is unambiguous. Define stdin/stdout behavior, path handling, exit codes, and overwrite flags in the help and README.
+- [x] Add version output, quiet mode, optional verbose diagnostics, and readable Rich/Typer errors while keeping non-interactive CI output stable. Do not make color or network access mandatory.
+- [x] Add shell-level CLI integration tests for success, invalid input, stale artifact, dry run, and output path failures. Keep pure model tests separate from command tests.
+- [x] Update the package entry point, README installation/examples, Makefile targets, and CI instructions to use `yaml2genie` consistently. Remove skeleton references such as the placeholder greeting and stale `genie2yaml` command names.
 
 **Tests and acceptance:** `uv run pytest`, Ruff, Pyright, and the documented Make targets pass in a clean environment; every command has useful `--help`; stale output fails `check` with a non-zero exit code and a reviewable diff.
 

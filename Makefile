@@ -1,4 +1,4 @@
-.PHONY: _check-tools _sync setup clean upgrade test check lint format format-check typecheck build
+.PHONY: _check-tools _sync setup clean upgrade test check check-cli lint format format-check typecheck build
 
 .DEFAULT_GOAL := help
 
@@ -64,6 +64,9 @@ test: _sync ## Run tests with coverage
 
 check: _sync ## Run all prek hooks against every file
 	@uv run prek run --all-files
+
+check-cli: _sync ## Verify committed CLI artifacts are current
+	@uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
 
 lint: _sync ## Check the code with Ruff
 	@uv run ruff check .

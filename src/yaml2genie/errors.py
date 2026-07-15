@@ -19,6 +19,7 @@ class ErrorCategory(StrEnum):
     SCHEMA = "schema"
     SEMANTIC = "semantic"
     OUTPUT = "output"
+    STALE = "stale"
 
 
 class ErrorExitCode(IntEnum):
@@ -26,6 +27,7 @@ class ErrorExitCode(IntEnum):
     SCHEMA = 3
     SEMANTIC = 4
     OUTPUT = 5
+    STALE = 6
 
 
 @dataclass(frozen=True)
@@ -68,6 +70,14 @@ class ErrorReport:
     @classmethod
     def output(cls, error: OSError) -> "ErrorReport":
         return cls(ErrorCategory.OUTPUT, ErrorExitCode.OUTPUT, str(error))
+
+    @classmethod
+    def stale(cls) -> "ErrorReport":
+        return cls(
+            ErrorCategory.STALE,
+            ErrorExitCode.STALE,
+            "generated output differs from the committed artifact",
+        )
 
 
 def _format_location(location: tuple[int | str, ...]) -> str:

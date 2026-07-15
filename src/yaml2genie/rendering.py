@@ -111,6 +111,10 @@ def write_yaml_atomic(
     _write_atomic(render_yaml(definition), output_path)
 
 
+def write_text_atomic(contents: str, output_path: Path) -> None:
+    _write_atomic(contents, output_path)
+
+
 def plan_source_tree(
     definition: DefinitionDocument,
     layout: Layout,

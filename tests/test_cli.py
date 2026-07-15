@@ -50,6 +50,144 @@ def test_build_writes_expected_deterministic_json(tmp_path: Path) -> None:
     assert output_path.read_bytes() == first_bytes
 
 
+def test_check_accepts_current_artifact(tmp_path: Path) -> None:
+    input_path = FIXTURE_ROOT / "inputs/minimal.yaml"
+    artifact_path = tmp_path / "definition.json"
+    artifact_path.write_bytes((FIXTURE_ROOT / "artifacts/minimal.json").read_bytes())
+
+    result = runner.invoke(
+        app,
+        ["check", str(input_path), "--artifact", str(artifact_path)],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == f"Artifact is up to date: {artifact_path}\n"
+    assert result.stderr == ""
+
+
+def test_check_reports_reviewable_diff_for_stale_artifact(tmp_path: Path) -> None:
+    input_path = FIXTURE_ROOT / "inputs/minimal.yaml"
+    artifact_path = tmp_path / "definition.json"
+    artifact_path.write_text('{"version": 1}\n', encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["check", str(input_path), "--artifact", str(artifact_path)],
+    )
+
+    assert result.exit_code == ErrorExitCode.STALE
+    assert "--- " in result.stderr
+    assert "+++ generated" in result.stderr
+    assert '-{"version": 1}' in result.stderr
+    assert '+    "version": 2' in result.stderr
+    assert "Error [stale]" in result.stderr
+
+
+def test_build_supports_stdin_stdout_and_yaml_format() -> None:
+    result = runner.invoke(
+        app,
+        ["build", "-", "--output", "-", "--format", "yaml"],
+        input="version: 2\n",
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == "version: 2\n"
+
+
+def test_decompile_supports_stdout() -> None:
+    input_path = FIXTURE_ROOT / "artifacts/minimal.json"
+
+    result = runner.invoke(app, ["decompile", str(input_path), "--output", "-"])
+
+    assert result.exit_code == 0
+    assert result.stdout.startswith("version: 2\n")
+    assert "config:" in result.stdout
+
+
+def test_build_infers_yaml_format_from_output_suffix(tmp_path: Path) -> None:
+    output_path = tmp_path / "definition.yaml"
+
+    result = runner.invoke(
+        app,
+        [
+            "build",
+            str(FIXTURE_ROOT / "inputs/minimal.yaml"),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert output_path.read_text(encoding="utf-8").startswith("version: 2\n")
+    assert "config:" in output_path.read_text(encoding="utf-8")
+
+
+def test_build_replaces_existing_output_atomically(tmp_path: Path) -> None:
+    output_path = tmp_path / "definition.json"
+    output_path.write_text("hand edited\n", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "build",
+            str(FIXTURE_ROOT / "inputs/minimal.yaml"),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (
+        output_path.read_bytes()
+        == (FIXTURE_ROOT / "artifacts/minimal.json").read_bytes()
+    )
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["--help"],
+        ["validate", "--help"],
+        ["build", "--help"],
+        ["decompile", "--help"],
+        ["check", "--help"],
+    ],
+)
+def test_every_command_has_help(arguments: list[str]) -> None:
+    result = runner.invoke(app, arguments)
+
+    assert result.exit_code == 0
+    assert "Usage:" in result.stdout
+
+
+def test_version_output() -> None:
+    result = runner.invoke(app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.stdout == "yaml2genie 0.1.0\n"
+
+
+def test_quiet_suppresses_success_message() -> None:
+    result = runner.invoke(
+        app,
+        ["--quiet", "validate", str(FIXTURE_ROOT / "inputs/minimal.yaml")],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout == ""
+
+
+def test_verbose_prints_diagnostic_context() -> None:
+    result = runner.invoke(
+        app,
+        ["--verbose", "validate", str(FIXTURE_ROOT / "inputs/minimal.yaml")],
+    )
+
+    assert result.exit_code == 0
+    assert "[verbose] compile input" in result.stderr
+    assert result.stdout == "Valid Genie Agent definition.\n"
+
+
 def test_failed_build_preserves_existing_output(tmp_path: Path) -> None:
     output_path = tmp_path / "definition.json"
     original = b"existing artifact\n"

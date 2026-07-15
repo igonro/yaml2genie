@@ -10,6 +10,7 @@ definitions:
         script:
           - uv sync --all-groups --all-extras
           - uv run prek run --all-files
+          - uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
     - step: &tests
         name: Run unit tests
         script:

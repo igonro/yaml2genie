@@ -29,27 +29,55 @@ collections are sorted without rewriting the source YAML.
 ## Usage
 
 ```bash
+# Validate without writing files
 uv run yaml2genie validate tests/inputs/minimal.yaml
+
+# Build deterministic JSON; existing files are replaced atomically
 uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
 uv run yaml2genie build tests/inputs/grouped_genie --output definition.json
+
+# Check a committed artifact; stale output returns exit code 6
+uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
+
+# Convert JSON back to centralized YAML
 uv run yaml2genie decompile definition.json --output definition.yaml
+
+# Convert JSON to a source tree or inspect its write plan
 uv run yaml2genie decompile definition.json --output genie --layout fully-split
 uv run yaml2genie decompile definition.json --output genie --layout mixed --dry-run
+
+# Stream centralized YAML/JSON through stdin/stdout
+cat tests/inputs/minimal.yaml | uv run yaml2genie build - --output - --format json
 ```
 
-`decompile` accepts a raw serialized definition object or a JSON string that
-contains that object. It writes centralized YAML with block scalars for
-multiline text and concise scalars for supported single-item string lists.
-Pass `--layout central|grouped|category-split|fully-split|mixed` to select the
-output organization. `fully-split` writes one item per declared category
-directory. `mixed` writes a manifest that explicitly declares every category as
-`file` or `items`. Generated item filenames are safe and deterministic, but
-identifiers and IDs remain document content rather than filename-derived data.
+The core commands are `validate`, `build`, `decompile`, and `check`. Use
+`yaml2genie --help` or `<command> --help` for the complete option list.
+`--version` prints the installed version, `--quiet` suppresses successful
+operation messages, and `--verbose` prints diagnostic context to stderr.
+
+`build` accepts YAML files or declared source trees and writes JSON by default.
+Use `--format yaml` or a `.yaml`/`.yml` output suffix for YAML. `decompile`
+accepts a raw serialized definition object or a JSON string that contains that
+object, and writes YAML by default. Both commands accept `-` for centralized
+stdin/stdout. Source-tree layouts require a directory output and cannot be
+streamed.
+
+`--layout central|grouped|category-split|fully-split|mixed` selects the
+decompile output organization. `fully-split` writes one item per declared
+category directory. `mixed` writes a manifest that explicitly declares every
+category as `file` or `items`. Generated item filenames are safe and
+deterministic, but identifiers and IDs remain document content rather than
+filename-derived data.
 
 For source-tree outputs, `--dry-run` prints the complete deterministic file plan
 without writing. Existing YAML files or trees are protected; pass `--overwrite`
 to replace the requested output atomically. Filename collisions fail before the
 existing tree or manifest is changed.
+
+`check` renders the candidate using the selected format and compares it with a
+committed artifact without writing. It returns zero when the artifact is current
+and exit code 6 with a focused unified diff when it is stale. Source errors use
+exit code 2, schema errors 3, semantic errors 4, and output errors 5.
 
 ---
 
@@ -105,6 +133,7 @@ make test
 make lint
 make format
 make typecheck
+make check-cli
 
 # Check formatting without changing files
 make format-check
