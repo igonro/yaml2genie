@@ -18,6 +18,7 @@ PHASE_0_FIXTURES = (
     Path("inputs/malformed_join.yaml"),
     Path("inputs/unsupported_field.yaml"),
     Path("inputs/unsupported_version.yaml"),
+    Path("inputs/phase1_supported.yaml"),
     Path("artifacts/minimal.json"),
     Path("artifacts/phase1_supported.json"),
     Path("artifacts/phase1_supported.provenance.md"),

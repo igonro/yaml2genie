@@ -10,64 +10,31 @@ Once configured, add dynamic project badges such as:
 ![Coverage](https://img.shields.io/codecov/...)]
 -->
 
-> One-paragraph description of what this project does and who it's for.
+Compile a centralized YAML definition into deterministic Databricks Genie Agent
+`serialized_space` version 2 JSON.
 
 ---
 
-## 🚀 Overview
+## Overview
 
-Explanation of this project, motivation, etc.
+Phase 1 supports sample questions, tables and column configurations, text
+instructions, example question SQL, joins, and filter, expression, and measure
+SQL snippets. The compiler rejects unknown fields instead of discarding them.
 
-### ✨ Project Features
+Generated JSON is stable across repeated builds. Explicit valid IDs are
+preserved, omitted IDs are generated deterministically, and service-required
+collections are sorted without rewriting the source YAML.
 
-* **Awesome Feature 1**: ...
-* **Awesome Feature 2**: ...
+## Usage
+
+```bash
+uv run yaml2genie validate tests/inputs/minimal.yaml
+uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
+```
 
 ---
 
-## 🔧 Installation
-
-```
-# with pip
-pip install git+https://github.com/igonro/genie2yaml
-
-# with uv
-uv tool install --from git+https://github.com/igonro/genie2yaml
-```
-
-Then run it:
-```
-genie2yaml ...
-```
-
-You can also run it directly without installation with uv:
-```
-uvx --from git+https://github.com/igonro/genie2yaml genie2yaml
-```
-
-<!-- Once we publish the package to Pypi replace with:
-```
-# with pip
-pip install genie2yaml
-
-# with uv
-uv tool install genie2yaml
-```
-
-Then run it:
-```
-genie2yaml ...
-```
-
-You can also run it directly without installation with uv:
-```
-uvx genie2yaml
-```
--->
-
----
-
-## 🛠️ Getting Started: Local Environment Setup
+## Local Development
 
 Follow these steps to get the project running on your machine.
 
@@ -102,19 +69,7 @@ Before you begin, make sure you have the following tools installed:
     .venv\Scripts\activate
     ```
 
-3.  **Configure environment variables:**
-    The project uses a `.env` file to manage secrets and local configurations.
-    ```bash
-    # Copy the example file to create your local configuration
-    cp .env.example .env
-    ```
-    Open the `.env` file and fill in the necessary variables. **This file should never be committed to the repository** (it's already included in `.gitignore`).
-
-You're all set! Your development environment is now fully configured.
-
----
-
-## 💻 Development Workflow
+## Development Workflow
 
 ### Makefile Commands
 
@@ -149,7 +104,7 @@ Individual tools can also be run through the project environment, for example `u
 
 ---
 
-## ⚙️ Continuous Integration (CI/CD)
+## Continuous Integration
 
 This project uses **Bitbucket Pipelines** for automation. The configuration file is `bitbucket-pipelines.yaml`.
 

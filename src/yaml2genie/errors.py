@@ -1,0 +1,2 @@
+class DefinitionError(ValueError):
+    pass

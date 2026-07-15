@@ -1,41 +1,21 @@
 [project]
 name = "yaml2genie"
 version = "0.1.0"
-description = "Compile YAML config files into a Genie Agent"
+description = "Compile centralized YAML into Databricks Genie Agent JSON"
 readme = "README.md"
 authors = [
     { name = "Iago González", email = "6860957+igonro@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
 
-# CORE DEPENDENCIES: Installed for everyone
 dependencies = [
-    "requests>=2.20",
+    "pydantic>=2.11,<3",
+    "pyyaml>=6,<7",
+    "typer>=0.16,<1",
 ]
 
 [project.scripts]
 yaml2genie = "yaml2genie:main"
-
-[project.optional-dependencies]
-# ---------------------------------------------------------
-# TARGET: End-users.
-# PUBLISHED TO PyPI: Yes. Included in package metadata.
-#
-# PURPOSE: Extra features/plugins for your package.
-# Use this to prevent forcing users to download heavy
-# libraries they might not need, and providing an easy
-# way to install them if they do.
-#
-# HOW TO INSTALL (End-user):
-#   pip install "yaml2genie[plot]"
-#   pip install "yaml2genie[plot,excel]"
-# ---------------------------------------------------------
-plot = [
-  "matplotlib>=3.9"
-]
-excel = [
-  "openpyxl>=3.1"
-]
 
 [dependency-groups]
 # ---------------------------------------------------------
@@ -55,7 +35,6 @@ dev = [
 	"prek>=0.2,<1",
 	"pydoclint>=0.8,<1",
 	"pyright>=1.1,<2",
-  "python-dotenv>=1.1,<2",
 	"ruff>=0.15,<1",
 ]
 test = [
