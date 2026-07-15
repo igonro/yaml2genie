@@ -3,7 +3,7 @@
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=flat)](https://docs.astral.sh/ruff/)
 [![uv](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FOnyx-Nostalgia%2Fuv%2Frefs%2Fheads%2Ffix%2Flogo-badge%2Fassets%2Fbadge%2Fv0.json&style=flat)](https://docs.astral.sh/uv/)
-![Bitbucket Pipelines](https://img.shields.io/badge/CI-Bitbucket%20Pipelines-0052CC?style=flat&logo=bitbucket&logoColor=white)
+[![CI](https://github.com/igonro/yaml2genie/actions/workflows/ci.yml/badge.svg)](https://github.com/igonro/yaml2genie/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/igonro/yaml2genie?style=flat)](LICENSE)
 <!--
 Once configured, add dynamic project badges such as:
@@ -206,13 +206,8 @@ focused tests, and user-facing documentation agree.
 
 ## Continuous Integration
 
-This project uses **Bitbucket Pipelines** for automation. The configuration file is `bitbucket-pipelines.yaml`.
-
-The pipeline is automatically triggered on every `push` to any branch and performs the following tasks:
-
-1.  **Installs dependencies** in a clean environment.
-2.  **Runs `ruff format --check`** to verify that the code is formatted.
-3.  **Runs `ruff check`** to look for linting errors.
-4.  **Runs `pytest`** to pass the entire test suite.
-
-If any of these steps fail, the pipeline will fail, and you will be notified. This prevents broken or low-quality code from being merged into the main branch.
+This project uses [GitHub Actions](https://docs.github.com/en/actions) for
+automation. The [CI workflow](.github/workflows/ci.yml) runs on every push and
+pull request, with quality checks and unit tests running in parallel. It
+installs the locked dependencies with `uv`, runs all `prek` hooks, verifies the
+committed CLI artifact, and executes the full test suite with coverage.
