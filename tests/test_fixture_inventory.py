@@ -19,6 +19,7 @@ PHASE_0_FIXTURES = (
     Path("inputs/unsupported_field.yaml"),
     Path("inputs/unsupported_version.yaml"),
     Path("inputs/phase1_supported.yaml"),
+    Path("inputs/phase4_supported.yaml"),
     Path("inputs/malformed.json"),
     Path("inputs/missing_version.json"),
     Path("inputs/missing_item_id.json"),
@@ -26,11 +27,13 @@ PHASE_0_FIXTURES = (
     Path("inputs/unsupported_field.json"),
     Path("artifacts/minimal.json"),
     Path("artifacts/phase1_supported.json"),
+    Path("artifacts/phase4_supported.json"),
     Path("artifacts/phase1_supported.provenance.md"),
 )
 JSON_ARTIFACTS = (
     Path("artifacts/minimal.json"),
     Path("artifacts/phase1_supported.json"),
+    Path("artifacts/phase4_supported.json"),
 )
 
 

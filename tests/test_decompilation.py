@@ -29,6 +29,36 @@ def test_decompile_writes_yaml_that_round_trips_to_normalized_json(
     assert compile_definition(output_path).model_dump(exclude_none=True) == expected
 
 
+def test_decompile_preserves_all_documented_v2_fields(tmp_path: Path) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/phase4_supported.json"
+    output_path = tmp_path / "definition.yaml"
+    expected = json.loads(input_path.read_text(encoding="utf-8"))
+
+    result = runner.invoke(
+        app,
+        ["decompile", str(input_path), "--output", str(output_path)],
+    )
+
+    assert result.exit_code == 0
+    assert compile_definition(output_path).model_dump(exclude_none=True) == expected
+
+
+def test_version_error_names_the_supported_version(tmp_path: Path) -> None:
+    input_path = tmp_path / "definition.json"
+    input_path.write_text('{"version": 3}', encoding="utf-8")
+    output_path = tmp_path / "definition.yaml"
+
+    result = runner.invoke(
+        app,
+        ["decompile", str(input_path), "--output", str(output_path)],
+    )
+
+    assert result.exit_code == ErrorExitCode.SCHEMA
+    assert "version" in result.stderr
+    assert "Input should be 2" in result.stderr
+    assert not output_path.exists()
+
+
 def test_decompile_accepts_escaped_serialized_object(tmp_path: Path) -> None:
     expected = json.loads(
         (FIXTURE_ROOT / "artifacts/phase1_supported.json").read_text(

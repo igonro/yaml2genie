@@ -68,7 +68,7 @@ def test_validation_error_is_concise_and_has_field_path() -> None:
     )
 
     assert result.exit_code != 0
-    assert "data_sources.metric_views" in result.stderr
+    assert "data_sources.future_sources" in result.stderr
     assert "Traceback" not in result.stderr
 
 

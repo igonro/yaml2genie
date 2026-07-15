@@ -38,9 +38,22 @@ COLLECTIONS = (
         uniqueness_key=("id",),
     ),
     CollectionDescriptor(
+        ("benchmarks", "questions"),
+        ("id",),
+        id_required=True,
+        uniqueness_scope="question IDs",
+        uniqueness_key=("id",),
+    ),
+    CollectionDescriptor(
         ("data_sources", "tables"),
         ("identifier",),
         uniqueness_scope="data source identifiers",
+        uniqueness_key=("identifier",),
+    ),
+    CollectionDescriptor(
+        ("data_sources", "metric_views"),
+        ("identifier",),
+        uniqueness_scope="metric view identifiers",
         uniqueness_key=("identifier",),
     ),
     CollectionDescriptor(
@@ -53,6 +66,13 @@ COLLECTIONS = (
     CollectionDescriptor(
         ("instructions", "example_question_sqls"),
         ("id",),
+        id_required=True,
+        uniqueness_scope="instruction IDs",
+        uniqueness_key=("id",),
+    ),
+    CollectionDescriptor(
+        ("instructions", "sql_functions"),
+        ("id", "identifier"),
         id_required=True,
         uniqueness_scope="instruction IDs",
         uniqueness_key=("id",),
@@ -91,6 +111,10 @@ COLUMN_CONFIGS = CollectionDescriptor(
     ("column_name",),
     uniqueness_scope="column identities",
     uniqueness_key=("column_name",),
+)
+METRIC_VIEW_COLUMN_CONFIGS = CollectionDescriptor(
+    ("data_sources", "metric_views", "[]", "column_configs"),
+    ("column_name",),
 )
 JOIN_ALIAS_REFERENCE = re.compile(r"`([^`]+)`\s*\.\s*`[^`]+`")
 RELATIONSHIP_ANNOTATIONS = {
@@ -206,7 +230,10 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
     _validate_joins(document)
 
     for descriptor in COLLECTIONS:
-        if descriptor.path == ("data_sources", "tables"):
+        if descriptor.path in {
+            ("data_sources", "tables"),
+            ("data_sources", "metric_views"),
+        }:
             continue
         _normalize_collection(
             _collection(document, descriptor.path),
@@ -247,6 +274,26 @@ def normalize(candidate: DefinitionInput) -> DefinitionDocument:
         if descriptor.path == ("data_sources", "tables")
     )
     _normalize_collection(tables, table_descriptor, values_by_scope)
+
+    metric_views = _collection(document, ("data_sources", "metric_views"))
+    for metric_view in metric_views:
+        columns = cast(
+            "list[JsonObject] | None",
+            metric_view.get("column_configs"),
+        )
+        if columns is not None:
+            columns.sort(
+                key=lambda column: _item_key(
+                    column,
+                    METRIC_VIEW_COLUMN_CONFIGS.sort_key,
+                ),
+            )
+    metric_view_descriptor = next(
+        descriptor
+        for descriptor in COLLECTIONS
+        if descriptor.path == ("data_sources", "metric_views")
+    )
+    _normalize_collection(metric_views, metric_view_descriptor, values_by_scope)
 
     for scope, values in values_by_scope.items():
         _require_unique(values, scope)

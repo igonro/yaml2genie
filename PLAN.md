@@ -113,13 +113,13 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** The centralized model covers the full documented v2 definition rather than the preliminary POC subset.
 
-- [ ] Add `data_sources.metric_views` using the documented source and column configuration shape, with separate identifiers and sorting checks.
-- [ ] Add `instructions.sql_functions`, including `(id, identifier)` ordering and duplicate checks.
-- [ ] Add all documented example SQL parameter fields, default values, usage guidance, comments, aliases, display names, synonyms, and instruction fields without inventing output keys.
-- [ ] Add `benchmarks.questions` and benchmark answers. Enforce one answer per question and `format: SQL`, and extend the existing sample-question ID uniqueness scope across both categories.
-- [ ] Compare the model against current Create/Get/Update examples and the external POC artifact. Add a fixture for every field that was previously omitted or discarded.
-- [ ] Keep version 2 as an explicit model invariant. Add a version-dispatch registry only when a second supported version or a real migration adapter exists.
-- [ ] Revisit the Phase 0 unknown-field policy against schema-drift evidence. Keep strict rejection as the default; add preservation/warning mode only if round-trip tests prove it cannot hide typos or silently bypass validation.
+- [x] Add `data_sources.metric_views` using the documented source and column configuration shape, with separate identifiers and sorting checks.
+- [x] Add `instructions.sql_functions`, including `(id, identifier)` ordering and duplicate checks.
+- [x] Add all documented example SQL parameter fields, default values, usage guidance, comments, aliases, display names, synonyms, and instruction fields without inventing output keys.
+- [x] Add `benchmarks.questions` and benchmark answers. Enforce one answer per question and `format: SQL`, and extend the existing sample-question ID uniqueness scope across both categories.
+- [x] Compare the model against current Create/Get/Update examples. Per owner direction, exclude the incomplete external POC from Phase 4 acceptance. Add a fixture for every field that was previously omitted or discarded.
+- [x] Keep version 2 as an explicit model invariant. Add a version-dispatch registry only when a second supported version or a real migration adapter exists.
+- [x] Revisit the Phase 0 unknown-field policy against schema-drift evidence. Keep strict rejection as the default; add preservation/warning mode only if round-trip tests prove it cannot hide typos or silently bypass validation.
 
 **Tests and acceptance:** No documented v2 field is silently dropped; model dumps and re-loads preserve supported fields; all documented validation rules have focused tests; version errors name the supported versions.
 

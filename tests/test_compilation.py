@@ -36,6 +36,18 @@ def test_all_supported_fields_compile_to_expected_definition() -> None:
     assert definition.model_dump(exclude_none=True) == expected
 
 
+def test_all_documented_v2_fields_compile_to_expected_definition() -> None:
+    expected = json.loads(
+        (FIXTURE_ROOT / "artifacts/phase4_supported.json").read_text(
+            encoding="utf-8",
+        ),
+    )
+
+    definition = compile_definition(FIXTURE_ROOT / "inputs/phase4_supported.yaml")
+
+    assert definition.model_dump(exclude_none=True) == expected
+
+
 def test_normalized_output_is_sorted_without_rewriting_source() -> None:
     source_path = FIXTURE_ROOT / "inputs/unsorted.yaml"
     original_source = source_path.read_text(encoding="utf-8")
@@ -55,6 +67,170 @@ def test_normalized_output_is_sorted_without_rewriting_source() -> None:
         "sales.analytics.orders",
     ]
     assert source_path.read_text(encoding="utf-8") == original_source
+
+
+def test_metric_views_compile_with_sorted_column_configuration(
+    tmp_path: Path,
+) -> None:
+    source = {
+        "version": 2,
+        "data_sources": {
+            "metric_views": [
+                {
+                    "identifier": "sales.analytics.revenue_metrics",
+                    "description": "Revenue metrics by region.",
+                    "column_configs": [
+                        {"column_name": "revenue", "synonyms": ["sales"]},
+                        {"column_name": "region", "exclude": False},
+                    ],
+                },
+                {"identifier": "sales.analytics.customer_metrics"},
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    document = compile_definition(source_path).model_dump(exclude_none=True)
+
+    metric_views = document["data_sources"]["metric_views"]
+    assert [view["identifier"] for view in metric_views] == [
+        "sales.analytics.customer_metrics",
+        "sales.analytics.revenue_metrics",
+    ]
+    assert metric_views[0] == {
+        "identifier": "sales.analytics.customer_metrics",
+    }
+    assert metric_views[1]["description"] == ["Revenue metrics by region."]
+    assert metric_views[1]["column_configs"] == [
+        {"column_name": "region", "exclude": False},
+        {"column_name": "revenue", "synonyms": ["sales"]},
+    ]
+
+
+def test_sql_functions_compile_in_documented_order(tmp_path: Path) -> None:
+    source = {
+        "version": 2,
+        "instructions": {
+            "sql_functions": [
+                {
+                    "id": "00000000000000000000000000000002",
+                    "identifier": "sales.analytics.fiscal_year",
+                },
+                {
+                    "id": "00000000000000000000000000000001",
+                    "identifier": "sales.analytics.fiscal_quarter",
+                },
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    document = compile_definition(source_path).model_dump(exclude_none=True)
+
+    assert document["instructions"]["sql_functions"] == [
+        {
+            "id": "00000000000000000000000000000001",
+            "identifier": "sales.analytics.fiscal_quarter",
+        },
+        {
+            "id": "00000000000000000000000000000002",
+            "identifier": "sales.analytics.fiscal_year",
+        },
+    ]
+
+
+def test_benchmark_questions_compile_in_id_order(tmp_path: Path) -> None:
+    source = {
+        "version": 2,
+        "benchmarks": {
+            "questions": [
+                {
+                    "id": "00000000000000000000000000000002",
+                    "question": "Second question",
+                    "answer": [{"format": "SQL", "content": "SELECT 2"}],
+                },
+                {
+                    "id": "00000000000000000000000000000001",
+                    "question": "First question",
+                    "answer": [{"format": "SQL", "content": "SELECT 1"}],
+                },
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    document = compile_definition(source_path).model_dump(exclude_none=True)
+
+    questions = document["benchmarks"]["questions"]
+    assert [question["id"] for question in questions] == [
+        "00000000000000000000000000000001",
+        "00000000000000000000000000000002",
+    ]
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        [],
+        [
+            {"format": "SQL", "content": "SELECT 1"},
+            {"format": "SQL", "content": "SELECT 2"},
+        ],
+        [{"format": "CSV", "content": "not SQL"}],
+    ],
+)
+def test_benchmark_question_requires_one_sql_answer(
+    answer: list[dict[str, object]],
+    tmp_path: Path,
+) -> None:
+    source = {
+        "version": 2,
+        "benchmarks": {
+            "questions": [
+                {
+                    "id": "00000000000000000000000000000001",
+                    "question": "Test question",
+                    "answer": answer,
+                },
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match=r"benchmarks\.questions\.0\.answer"):
+        compile_definition(source_path)
+
+
+def test_benchmark_id_collision_reports_both_question_paths(tmp_path: Path) -> None:
+    shared_id = "00000000000000000000000000000001"
+    source = {
+        "version": 2,
+        "config": {
+            "sample_questions": [{"id": shared_id, "question": "Sample?"}],
+        },
+        "benchmarks": {
+            "questions": [
+                {
+                    "id": shared_id,
+                    "question": "Benchmark?",
+                    "answer": [{"format": "SQL", "content": "SELECT 1"}],
+                },
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "config.sample_questions[0].id" in message
+    assert "benchmarks.questions[0].id" in message
 
 
 def test_omitted_ids_are_valid_stable_and_explicit_ids_survive(tmp_path: Path) -> None:
@@ -95,7 +271,7 @@ def test_omitted_ids_are_valid_stable_and_explicit_ids_survive(tmp_path: Path) -
     [
         ("invalid_id.yaml", ValidationError, "config.sample_questions.0.id"),
         ("unsupported_version.yaml", ValidationError, "version"),
-        ("unsupported_field.yaml", ValidationError, "data_sources.metric_views"),
+        ("unsupported_field.yaml", ValidationError, "data_sources.future_sources"),
         ("malformed_join.yaml", ValidationError, "instructions.join_specs.0.sql"),
         ("duplicate_question_ids.yaml", DefinitionError, "config.sample_questions"),
         ("duplicate_instruction_ids.yaml", DefinitionError, "instructions"),
@@ -243,6 +419,33 @@ instructions:
     message = str(error.value)
     assert "instructions.text_instructions[0].id" in message
     assert "instructions.example_question_sqls[0].id" in message
+
+
+def test_sql_function_id_collision_reports_both_instruction_paths(
+    tmp_path: Path,
+) -> None:
+    shared_id = "00000000000000000000000000000001"
+    source = {
+        "version": 2,
+        "instructions": {
+            "text_instructions": [{"id": shared_id, "content": "Be concise."}],
+            "sql_functions": [
+                {
+                    "id": shared_id,
+                    "identifier": "sales.analytics.fiscal_quarter",
+                },
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "instructions.text_instructions[0].id" in message
+    assert "instructions.sql_functions[0].id" in message
 
 
 def test_duplicate_stable_keys_report_both_source_locations(tmp_path: Path) -> None:

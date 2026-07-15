@@ -24,15 +24,16 @@ establish observed shape but not requiredness.
   otherwise it is `unknown`.
 - Types describe observed JSON. A bounded collection is subject to the stated
   10,000-item general repeated-field limit.
-- `supported` means accepted in Phase 1. `deferred` means known version 2 shape
-  that Phase 1 rejects at its exact path and Phase 4 may add.
+- `supported` means accepted by the current centralized document model.
+  `deferred` means a known shape that the current model rejects at its exact
+  path.
 - YAML shorthand applies only at the YAML boundary. `scalar -> one item` means a
   scalar string is normalized to a one-element JSON string list.
 - Confidence describes the evidence for the field or rule, not a guess about
   requiredness.
 
 <!-- matrix:start -->
-| JSON path | Observed type | Requiredness | Limits | Sort key | Uniqueness scope | Allowed YAML shorthand | Phase 1 | Confidence | Primary source |
+| JSON path | Observed type | Requiredness | Limits | Sort key | Uniqueness scope | Allowed YAML shorthand | Current support | Confidence | Primary source |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `version` | integer scalar | required | exactly `2` for new definitions | n/a | n/a | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `config` | object | unknown | n/a | n/a | n/a | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -46,20 +47,20 @@ establish observed shape but not requiredness.
 | `data_sources.tables[].column_configs` | object-list (bounded) | optional | at most 10,000 items | `column_name` | `(table_identifier, column_name)` agent-wide | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].column_name` | string scalar | unknown | 25,000 characters | parent collection | `(table_identifier, column_name)` agent-wide | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.tables[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.tables[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].exclude` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].enable_format_assistance` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].enable_entity_matching` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views` | object-list (bounded) | unknown | at most 10,000 items; workspace-specific source count | `identifier` | none stated | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].identifier` | string scalar | required | 25,000 characters; namespace format not stated | parent collection | none stated | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].description` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs` | object-list (bounded) | optional | at most 10,000 items | `column_name` | `(table_identifier, column_name)` wording is unresolved for metric views | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].column_name` | string scalar | unknown | 25,000 characters | parent collection | metric-view scope unresolved | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].exclude` | boolean scalar | unknown | n/a | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].enable_format_assistance` | boolean scalar | unknown | n/a | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `data_sources.metric_views[].column_configs[].enable_entity_matching` | boolean scalar | unknown | n/a | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views` | object-list (bounded) | unknown | at most 10,000 items; workspace-specific source count | `identifier` | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].identifier` | string scalar | required | 25,000 characters; namespace format not stated | parent collection | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].description` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs` | object-list (bounded) | optional | at most 10,000 items | `column_name` | `(table_identifier, column_name)` wording is unresolved for metric views | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].column_name` | string scalar | unknown | 25,000 characters | parent collection | metric-view scope unresolved | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].exclude` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].enable_format_assistance` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].enable_entity_matching` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions` | object | unknown | n/a | n/a | n/a | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.text_instructions` | object-list (bounded) | unknown | at most one item | `id` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.text_instructions[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -68,16 +69,16 @@ establish observed shape but not requiredness.
 | `instructions.example_question_sqls[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.example_question_sqls[].question` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.example_question_sqls[].sql` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each; additional SQL limit unknown | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters` | object-list (bounded) | optional | at most 10,000 items | n/a | none stated | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].type_hint` | string scalar | unknown | 25,000 characters | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].default_value` | object | unknown | n/a | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].default_value.values` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].usage_guidance` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_functions` | object-list (bounded) | unknown | at most 10,000 items | `(id, identifier)` | instruction IDs across every instruction category | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_functions[].id` | string scalar | unknown | ID format inferred from sorting and uniqueness rules | parent collection | instruction IDs across every instruction category | none | deferred | inferred | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_functions[].identifier` | string scalar | unknown | 25,000 characters; namespace format not stated | parent collection | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters` | object-list (bounded) | optional | at most 10,000 items | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].type_hint` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].default_value` | object | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].default_value.values` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].usage_guidance` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_functions` | object-list (bounded) | unknown | at most 10,000 items | `(id, identifier)` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_functions[].id` | string scalar | unknown | ID format inferred from sorting and uniqueness rules | parent collection | instruction IDs across every instruction category | none | supported | inferred | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_functions[].identifier` | string scalar | unknown | 25,000 characters; namespace format not stated | parent collection | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.join_specs` | object-list (bounded) | unknown | at most 10,000 items | `id` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.join_specs[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.join_specs[].left` | object | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -87,26 +88,26 @@ establish observed shape but not requiredness.
 | `instructions.join_specs[].right.identifier` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.join_specs[].right.alias` | string scalar | unknown | 25,000 characters; referenced backtick-quoted in join SQL | n/a | alias within join | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.join_specs[].sql` | string-list (bounded) | required | exactly two items; condition then relationship annotation; SQL length unknown | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.join_specs[].comment` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.join_specs[].instruction` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.join_specs[].comment` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.join_specs[].instruction` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets` | object | unknown | n/a | n/a | n/a | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets.filters` | object-list (bounded) | unknown | at most 10,000 items | `id` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets.expressions` | object-list (bounded) | unknown | at most 10,000 items | `id` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets.measures` | object-list (bounded) | unknown | at most 10,000 items | `id` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets.{filters,expressions,measures}[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_snippets.{filters,expressions,measures}[].alias` | string scalar | unknown | 25,000 characters | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_snippets.{filters,expressions,measures}[].alias` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_snippets.{filters,expressions,measures}[].sql` | string-list (bounded) | required | non-empty; at most 10,000 items; 25,000 characters each; SQL length unknown | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_snippets.{filters,expressions,measures}[].display_name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_snippets.{filters,expressions,measures}[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_snippets.{filters,expressions,measures}[].comment` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.sql_snippets.{filters,expressions,measures}[].instruction` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks` | object | unknown | n/a | n/a | n/a | none | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions` | object-list (bounded) | unknown | at most 10,000 items | `id` | question IDs across sample and benchmark questions | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | question IDs across sample and benchmark questions | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions[].question` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions[].answer` | object-list | required | exactly one item | n/a | none stated | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions[].answer[].format` | string scalar | required | exactly `SQL` | n/a | none stated | none | deferred | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `benchmarks.questions[].answer[].content` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each; SQL length unknown | n/a | none stated | no (deferred) | deferred | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_snippets.{filters,expressions,measures}[].display_name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_snippets.{filters,expressions,measures}[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_snippets.{filters,expressions,measures}[].comment` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.sql_snippets.{filters,expressions,measures}[].instruction` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks` | object | unknown | n/a | n/a | n/a | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions` | object-list (bounded) | unknown | at most 10,000 items | `id` | question IDs across sample and benchmark questions | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].id` | string scalar | required | 32 lowercase hexadecimal characters | parent collection | question IDs across sample and benchmark questions | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].question` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].answer` | object-list | required | exactly one item | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].answer[].format` | string scalar | required | exactly `SQL` | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].answer[].content` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each; SQL length unknown | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 <!-- matrix:end -->
 
 ## Upstream contradictions
@@ -138,6 +139,19 @@ necessary for a supplied item.
 YAML scalar shorthand is limited to matrix rows marked `scalar -> one item`.
 Join SQL remains an explicit two-item list. Source order is author-facing;
 rendered JSON uses the documented sort key.
+
+## Phase 4 compatibility decisions
+
+The centralized model covers every version 2 field in the current official
+Create, Get, Update, and serialized-definition examples. The compact
+`phase4_supported` fixture pins every field that was deferred in Phase 1 and
+round-trips it through JSON and YAML without loss.
+
+Version 2 remains a literal model invariant. A dispatch registry is deferred
+until another version or a migration adapter exists. Unknown fields remain
+strictly rejected; current evidence does not justify a preservation or warning
+mode that could hide typos or bypass validation. Per repository-owner direction,
+the incomplete external POC is not part of Phase 4 acceptance evidence.
 
 ## Representation boundary
 
