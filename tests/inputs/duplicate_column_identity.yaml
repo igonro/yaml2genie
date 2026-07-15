@@ -1,0 +1,9 @@
+version: 2
+data_sources:
+  tables:
+    - identifier: sales.analytics.orders
+      column_configs:
+        - column_name: order_amount
+          description: Revenue for one order.
+        - column_name: order_amount
+          description: Amount charged for one order.

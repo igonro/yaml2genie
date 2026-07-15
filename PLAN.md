@@ -45,14 +45,14 @@ Suggested package areas are `models`, `loaders`, `normalization`, `rendering`, `
 
 **Outcome:** A small, reviewable contract matrix and fixture strategy exist before feature work begins.
 
-- [ ] Convert `.agents/docs/databricks-genie-contract.md` into a field-by-field v2 matrix with source URL, source retrieval date, JSON path, observed type, explicit requiredness, limits, sort key, uniqueness scope, allowed YAML shorthand, Phase 1 support status, and confidence (`documented`, `example-only`, `inferred`, or `unknown`).
-- [ ] Record upstream contradictions as test/design inputs: current v2 guidance coexists with stale v1 examples; some examples contain non-hex IDs; SQL functions participate in ID sorting and uniqueness but are omitted from the prose list of ID-required fields.
-- [ ] Define whether each field is explicitly required, explicitly optional, or unresolved, and whether it is a scalar, string-list, object-list, or bounded collection. Do not infer requiredness from an example or the preliminary POC. For unresolved fields, state the conservative Phase 1 behavior instead of guessing.
-- [ ] Create fixture directories under `tests/inputs/` and `tests/artifacts/`. Include a minimal supported centralized YAML, its expected JSON, malformed YAML, an invalid ID, unsorted input, duplicate IDs in each uniqueness scope, duplicate column identity, malformed join, unsupported field, and unsupported version.
-- [ ] Add one small v2 JSON fixture containing every field Phase 1 claims to support and annotate its provenance. Keep the large Databricks example and business-specific POC data out of unit tests.
-- [ ] Audit `CONTEXT.md` against the matrix, add only missing domain terms, and link the two architectural decisions in `docs/adr/`; do not duplicate field specifications in the glossary.
-- [ ] Decide the supported JSON input forms for the first release: raw serialized object and escaped serialized string; defer automatic extraction from a full Get API response until the import phase.
-- [ ] Freeze the Phase 1 unknown/unsupported-field behavior. Default to strict rejection with an exact path; do not silently discard fields that only Phase 4 will support.
+- [x] Convert `.agents/docs/databricks-genie-contract.md` into a field-by-field v2 matrix with source URL, source retrieval date, JSON path, observed type, explicit requiredness, limits, sort key, uniqueness scope, allowed YAML shorthand, Phase 1 support status, and confidence (`documented`, `example-only`, `inferred`, or `unknown`).
+- [x] Record upstream contradictions as test/design inputs: current v2 guidance coexists with stale v1 examples; some examples contain non-hex IDs; SQL functions participate in ID sorting and uniqueness but are omitted from the prose list of ID-required fields.
+- [x] Define whether each field is explicitly required, explicitly optional, or unresolved, and whether it is a scalar, string-list, object-list, or bounded collection. Do not infer requiredness from an example or the preliminary POC. For unresolved fields, state the conservative Phase 1 behavior instead of guessing.
+- [x] Create fixture directories under `tests/inputs/` and `tests/artifacts/`. Include a minimal supported centralized YAML, its expected JSON, malformed YAML, an invalid ID, unsorted input, duplicate IDs in each uniqueness scope, duplicate column identity, malformed join, unsupported field, and unsupported version.
+- [x] Add one small v2 JSON fixture containing every field Phase 1 claims to support and annotate its provenance. Keep the large Databricks example and business-specific POC data out of unit tests.
+- [x] Audit `CONTEXT.md` against the matrix, add only missing domain terms, and link the two architectural decisions in `docs/adr/`; do not duplicate field specifications in the glossary.
+- [x] Decide the supported JSON input forms for the first release: raw serialized object and escaped serialized string; defer automatic extraction from a full Get API response until the import phase.
+- [x] Freeze the Phase 1 unknown/unsupported-field behavior. Default to strict rejection with an exact path; do not silently discard fields that only Phase 4 will support.
 
 **Tests and acceptance:** `tests/test_fixture_inventory.py` enumerates every Phase 0 fixture by relative path and asserts it exists; every matrix row has a support state and confidence; every normative rule has a primary-source URL; requiredness is `unknown` unless the source states it; the bundle note says `file_path` and inline `serialized_space` are mutually exclusive.
 

@@ -1,0 +1,12 @@
+version: 2
+config:
+  sample_questions:
+    - id: "00000000000000000000000000000001"
+      question: What is total revenue?
+data_sources:
+  tables:
+    - identifier: sales.analytics.orders
+instructions:
+  text_instructions:
+    - id: "00000000000000000000000000000002"
+      content: Use order_amount for revenue.

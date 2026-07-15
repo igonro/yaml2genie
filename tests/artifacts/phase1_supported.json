@@ -1,0 +1,98 @@
+{
+    "version": 2,
+    "config": {
+        "sample_questions": [
+            {
+                "id": "00000000000000000000000000000001",
+                "question": [
+                    "What is total revenue?"
+                ]
+            }
+        ]
+    },
+    "data_sources": {
+        "tables": [
+            {
+                "identifier": "sales.analytics.orders",
+                "description": [
+                    "Completed sales orders."
+                ],
+                "column_configs": [
+                    {
+                        "column_name": "order_amount",
+                        "description": [
+                            "Revenue for one order."
+                        ],
+                        "exclude": false,
+                        "enable_format_assistance": true,
+                        "enable_entity_matching": false
+                    }
+                ]
+            }
+        ]
+    },
+    "instructions": {
+        "text_instructions": [
+            {
+                "id": "00000000000000000000000000000002",
+                "content": [
+                    "Use order_amount for revenue."
+                ]
+            }
+        ],
+        "example_question_sqls": [
+            {
+                "id": "00000000000000000000000000000003",
+                "question": [
+                    "What is total revenue?"
+                ],
+                "sql": [
+                    "SELECT SUM(order_amount) FROM sales.analytics.orders"
+                ]
+            }
+        ],
+        "join_specs": [
+            {
+                "id": "00000000000000000000000000000004",
+                "left": {
+                    "identifier": "sales.analytics.orders",
+                    "alias": "orders"
+                },
+                "right": {
+                    "identifier": "sales.analytics.customers",
+                    "alias": "customers"
+                },
+                "sql": [
+                    "`orders`.`customer_id` = `customers`.`customer_id`",
+                    "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+                ]
+            }
+        ],
+        "sql_snippets": {
+            "filters": [
+                {
+                    "id": "00000000000000000000000000000005",
+                    "sql": [
+                        "orders.order_amount > 1000"
+                    ]
+                }
+            ],
+            "expressions": [
+                {
+                    "id": "00000000000000000000000000000006",
+                    "sql": [
+                        "YEAR(orders.order_date)"
+                    ]
+                }
+            ],
+            "measures": [
+                {
+                    "id": "00000000000000000000000000000007",
+                    "sql": [
+                        "SUM(orders.order_amount)"
+                    ]
+                }
+            ]
+        }
+    }
+}

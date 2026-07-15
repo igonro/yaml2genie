@@ -37,3 +37,20 @@ A question and its expected SQL answer used to evaluate Agent quality. It is dis
 
 **Technical Normalization**:
 The deterministic fulfillment applied before JSON export: generating missing IDs, sorting collections required by Databricks, and enforcing cross-item constraints without rewriting the author's YAML files.
+
+**Question ID Scope**:
+The shared uniqueness scope containing sample-question IDs and benchmark-question IDs.
+_Avoid_: Validating those collections independently.
+
+**Instruction ID Scope**:
+The shared uniqueness scope containing text instructions, example SQL questions, SQL functions, joins, filters, expressions, and measures.
+_Avoid_: Treating an ID as unique merely because it is unique within one instruction category.
+
+**Contract Matrix**:
+The source-linked evidence ledger in [.agents/docs/databricks-genie-contract.md](.agents/docs/databricks-genie-contract.md) that records observed version 2 fields, requiredness evidence, constraints, and release support. It governs schema implementation without replacing upstream documentation.
+_Avoid_: Copying field specifications into this glossary.
+
+## Architecture decisions
+
+- [ADR 0001: Keep the serialized definition as the core contract](docs/adr/0001-schema-first-serialized-core.md)
+- [ADR 0002: Generate stable IDs for omitted definition items](docs/adr/0002-deterministic-generated-ids.md)

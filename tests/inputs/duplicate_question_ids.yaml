@@ -1,0 +1,7 @@
+version: 2
+config:
+  sample_questions:
+    - id: "00000000000000000000000000000001"
+      question: What is total revenue?
+    - id: "00000000000000000000000000000001"
+      question: Which region has the most revenue?

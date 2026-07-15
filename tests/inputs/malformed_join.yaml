@@ -1,0 +1,12 @@
+version: 2
+instructions:
+  join_specs:
+    - id: "00000000000000000000000000000001"
+      left:
+        identifier: sales.analytics.orders
+        alias: orders
+      right:
+        identifier: sales.analytics.customers
+        alias: customers
+      sql:
+        - "`orders`.`customer_id` = `customers`.`customer_id`"

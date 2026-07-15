@@ -1,0 +1,5 @@
+version: 2
+config:
+  sample_questions:
+    - id: A0000000-0000-0000-0000-000000000001
+      question: What is total revenue?

@@ -1,0 +1,9 @@
+version: 2
+instructions:
+  text_instructions:
+    - id: "00000000000000000000000000000001"
+      content: Use order_amount for revenue.
+  example_question_sqls:
+    - id: "00000000000000000000000000000001"
+      question: What is total revenue?
+      sql: SELECT SUM(order_amount) FROM sales.analytics.orders
