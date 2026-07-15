@@ -190,3 +190,202 @@ def test_omitted_id_is_stable_across_processes(tmp_path: Path) -> None:
     ]
 
     assert ids[0] == ids[1]
+
+
+def test_stable_key_keeps_generated_id_when_content_changes(tmp_path: Path) -> None:
+    source_path = tmp_path / "definition.yaml"
+    source = {
+        "version": 2,
+        "config": {
+            "sample_questions": [
+                {
+                    "stable_key": "monthly-orders",
+                    "question": "How many orders this month?",
+                },
+            ],
+        },
+    }
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    before = compile_definition(source_path)
+    source["config"]["sample_questions"][0]["question"] = (
+        "How many completed orders this month?"
+    )
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+    after = compile_definition(source_path)
+
+    assert before.config is not None
+    assert before.config.sample_questions is not None
+    assert after.config is not None
+    assert after.config.sample_questions is not None
+    assert before.config.sample_questions[0].id == after.config.sample_questions[0].id
+    assert "stable_key" not in after.model_dump_json()
+
+
+def test_id_collision_reports_both_source_locations(tmp_path: Path) -> None:
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(
+        """version: 2
+instructions:
+  text_instructions:
+    - id: "00000000000000000000000000000001"
+      content: Be concise.
+  example_question_sqls:
+    - id: "00000000000000000000000000000001"
+      question: How many orders?
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "instructions.text_instructions[0].id" in message
+    assert "instructions.example_question_sqls[0].id" in message
+
+
+def test_duplicate_stable_keys_report_both_source_locations(tmp_path: Path) -> None:
+    source = {
+        "version": 2,
+        "config": {
+            "sample_questions": [
+                {"stable_key": "orders", "question": "How many orders?"},
+                {"stable_key": "orders", "question": "What is revenue?"},
+            ],
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "config.sample_questions[0].stable_key" in message
+    assert "config.sample_questions[1].stable_key" in message
+
+
+def test_generated_id_collision_reports_both_source_locations(tmp_path: Path) -> None:
+    question = {"question": "How many orders?"}
+    source = {
+        "version": 2,
+        "config": {"sample_questions": [question, question.copy()]},
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "config.sample_questions[0].id" in message
+    assert "config.sample_questions[1].id" in message
+
+
+def test_explicit_generated_collision_reports_both_locations(tmp_path: Path) -> None:
+    source_path = tmp_path / "definition.yaml"
+    generated_source = {
+        "version": 2,
+        "config": {"sample_questions": [{"question": "How many orders?"}]},
+    }
+    source_path.write_text(yaml.safe_dump(generated_source), encoding="utf-8")
+    generated = compile_definition(source_path)
+    assert generated.config is not None
+    assert generated.config.sample_questions is not None
+    generated_id = generated.config.sample_questions[0].id
+    generated_source["config"]["sample_questions"].append(
+        {"id": generated_id, "question": "What is revenue?"},
+    )
+    source_path.write_text(yaml.safe_dump(generated_source), encoding="utf-8")
+
+    with pytest.raises(DefinitionError) as error:
+        compile_definition(source_path)
+
+    message = str(error.value)
+    assert "config.sample_questions[0].id" in message
+    assert "config.sample_questions[1].id" in message
+
+
+def test_all_normalized_collections_are_sorted_and_unique(tmp_path: Path) -> None:
+    def identified(identifier: int, **content: object) -> dict[str, object]:
+        return {"id": f"{identifier:032x}", **content}
+
+    join = {
+        "left": {"identifier": "sales.analytics.orders", "alias": "orders"},
+        "right": {
+            "identifier": "sales.analytics.customers",
+            "alias": "customers",
+        },
+        "sql": [
+            "`orders`.`customer_id` = `customers`.`customer_id`",
+            "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--",
+        ],
+    }
+    source = {
+        "version": 2,
+        "config": {
+            "sample_questions": [
+                identified(2, question="Second"),
+                identified(1, question="First"),
+            ],
+        },
+        "data_sources": {
+            "tables": [
+                {
+                    "identifier": "sales.analytics.orders",
+                    "column_configs": [
+                        {"column_name": "order_date"},
+                        {"column_name": "customer_id"},
+                    ],
+                },
+                {"identifier": "sales.analytics.customers"},
+            ],
+        },
+        "instructions": {
+            "text_instructions": [identified(3, content="Guidance")],
+            "example_question_sqls": [
+                identified(5, question="Second"),
+                identified(4, question="First"),
+            ],
+            "join_specs": [identified(7, **join), identified(6, **join)],
+            "sql_snippets": {
+                "filters": [
+                    identified(9, sql="second_filter"),
+                    identified(8, sql="first_filter"),
+                ],
+                "expressions": [
+                    identified(11, sql="second_expression"),
+                    identified(10, sql="first_expression"),
+                ],
+                "measures": [
+                    identified(13, sql="second_measure"),
+                    identified(12, sql="first_measure"),
+                ],
+            },
+        },
+    }
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(yaml.safe_dump(source), encoding="utf-8")
+
+    document = compile_definition(source_path).model_dump(exclude_none=True)
+
+    id_collections = [
+        document["config"]["sample_questions"],
+        document["instructions"]["text_instructions"],
+        document["instructions"]["example_question_sqls"],
+        document["instructions"]["join_specs"],
+        document["instructions"]["sql_snippets"]["filters"],
+        document["instructions"]["sql_snippets"]["expressions"],
+        document["instructions"]["sql_snippets"]["measures"],
+    ]
+    for collection in id_collections:
+        identifiers = [item["id"] for item in collection]
+        assert identifiers == sorted(set(identifiers))
+
+    tables = document["data_sources"]["tables"]
+    table_identifiers = [table["identifier"] for table in tables]
+    assert table_identifiers == sorted(set(table_identifiers))
+    order_columns = tables[1]["column_configs"]
+    column_names = [column["column_name"] for column in order_columns]
+    assert column_names == sorted(set(column_names))

@@ -4,6 +4,7 @@ import pytest
 from typer.testing import CliRunner
 
 from yaml2genie.cli import app
+from yaml2genie.errors import ErrorExitCode
 
 FIXTURE_ROOT = Path(__file__).parent
 runner = CliRunner()
@@ -92,3 +93,54 @@ def test_validate_rejects_invalid_fixture(fixture_name: str) -> None:
 
     assert result.exit_code != 0
     assert fixture_name in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "category", "exit_code", "path"),
+    [
+        ("malformed.yaml", "source parse", 2, "malformed.yaml"),
+        ("invalid_id.yaml", "schema", 3, "config.sample_questions[0].id"),
+        (
+            "duplicate_instruction_ids.yaml",
+            "semantic",
+            4,
+            "instructions.text_instructions[0].id",
+        ),
+    ],
+)
+def test_validate_uses_structured_error_exit_codes(
+    fixture_name: str,
+    category: str,
+    exit_code: int,
+    path: str,
+) -> None:
+    result = runner.invoke(
+        app,
+        ["validate", str(FIXTURE_ROOT / "inputs" / fixture_name)],
+    )
+
+    assert result.exit_code == exit_code
+    assert f"Error [{category}]" in result.stderr
+    assert path in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_build_reports_output_errors_with_stable_exit_code(tmp_path: Path) -> None:
+    blocking_parent = tmp_path / "not-a-directory"
+    blocking_parent.write_text("file", encoding="utf-8")
+    output_path = blocking_parent / "definition.json"
+
+    result = runner.invoke(
+        app,
+        [
+            "build",
+            str(FIXTURE_ROOT / "inputs/minimal.yaml"),
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == ErrorExitCode.OUTPUT
+    assert "Error [output]" in result.stderr
+    assert str(output_path) in result.stderr
+    assert "Traceback" not in result.stderr
