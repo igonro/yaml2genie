@@ -67,6 +67,7 @@ external = ["DOC"]
 select = ["ALL"]
 ignore = [
     "AIR", "DJ",            # specific to Airflow and Django projects
+    "COM812",               # rule redundant with formatter
     "ERA",                  # allow commented code
     "BLE",                  # allow base exceptions, useful for unknown errors
     "CPY",                  # Copyright notes not needed
