@@ -1,0 +1,8 @@
+id: "00000000000000000000000000000013"
+left: {identifier: sales.analytics.orders, alias: orders}
+right: {identifier: sales.analytics.customers, alias: customers}
+sql:
+  - "`orders`.`customer_id` = `customers`.`customer_id`"
+  - "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+comment: Orders belong to customers.
+instruction: Use when customer attributes are requested.

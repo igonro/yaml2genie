@@ -1,0 +1,14 @@
+version: 2
+layout: mixed
+categories:
+  config/sample_questions.yaml: file
+  sources/tables.yaml: items
+  sources/metric_views.yaml: file
+  instructions/text_instructions.yaml: items
+  instructions/sql_functions.yaml: file
+  examples/joins.yaml: items
+  examples/queries.yaml: file
+  examples/filters.yaml: items
+  examples/expressions.yaml: file
+  examples/measures.yaml: file
+  benchmarks/questions.yaml: items

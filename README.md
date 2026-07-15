@@ -19,8 +19,8 @@ deterministic Databricks Genie Agent `serialized_space` version 2 JSON.
 
 The compiler supports the documented version 2 fields and rejects unknown
 fields instead of discarding them. A source may be one YAML file or a directory
-with a required `genie.yaml` manifest that declares `layout: grouped` or
-`layout: category-split`.
+with a required `genie.yaml` manifest that declares `layout: grouped`,
+`category-split`, `fully-split`, or `mixed`.
 
 Generated JSON is stable across repeated builds. Explicit valid IDs are
 preserved, omitted IDs are generated deterministically, and service-required
@@ -33,12 +33,23 @@ uv run yaml2genie validate tests/inputs/minimal.yaml
 uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
 uv run yaml2genie build tests/inputs/grouped_genie --output definition.json
 uv run yaml2genie decompile definition.json --output definition.yaml
+uv run yaml2genie decompile definition.json --output genie --layout fully-split
+uv run yaml2genie decompile definition.json --output genie --layout mixed --dry-run
 ```
 
 `decompile` accepts a raw serialized definition object or a JSON string that
 contains that object. It writes centralized YAML with block scalars for
 multiline text and concise scalars for supported single-item string lists.
-Existing YAML is protected; pass `--overwrite` to replace it deliberately.
+Pass `--layout central|grouped|category-split|fully-split|mixed` to select the
+output organization. `fully-split` writes one item per declared category
+directory. `mixed` writes a manifest that explicitly declares every category as
+`file` or `items`. Generated item filenames are safe and deterministic, but
+identifiers and IDs remain document content rather than filename-derived data.
+
+For source-tree outputs, `--dry-run` prints the complete deterministic file plan
+without writing. Existing YAML files or trees are protected; pass `--overwrite`
+to replace the requested output atomically. Filename collisions fail before the
+existing tree or manifest is changed.
 
 ---
 

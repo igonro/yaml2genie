@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Annotated, Never
+from typing import Annotated, Literal, Never
 
 import typer
 import yaml
@@ -9,12 +9,22 @@ from pydantic import ValidationError
 from yaml2genie.compiler import compile_definition, decompile_definition
 from yaml2genie.errors import DefinitionError, ErrorReport
 from yaml2genie.models import DefinitionDocument
-from yaml2genie.rendering import write_json_atomic, write_yaml_atomic
+from yaml2genie.rendering import (
+    plan_source_tree,
+    validate_source_tree_output,
+    write_json_atomic,
+    write_source_tree_atomic,
+    write_yaml_atomic,
+)
 
 app = typer.Typer(no_args_is_help=True)
 InputPath = Annotated[
     Path,
     typer.Argument(exists=True, file_okay=True, dir_okay=True),
+]
+LayoutOption = Annotated[
+    Literal["central", "grouped", "category-split", "fully-split", "mixed"],
+    typer.Option("--layout"),
 ]
 
 
@@ -72,16 +82,34 @@ def decompile(
     input_path: InputPath,
     output_path: Annotated[
         Path,
-        typer.Option("--output", "-o", dir_okay=False),
+        typer.Option("--output", "-o"),
     ],
     overwrite: Annotated[  # noqa: FBT002
         bool,
         typer.Option("--overwrite"),
     ] = False,
+    layout: LayoutOption = "central",
+    dry_run: Annotated[  # noqa: FBT002
+        bool,
+        typer.Option("--dry-run"),
+    ] = False,
 ) -> None:
     definition = _decompile_or_exit(input_path)
     try:
-        write_yaml_atomic(definition, output_path, overwrite=overwrite)
+        if layout == "central":
+            if dry_run:
+                typer.echo(f"CREATE {output_path.name}")
+                return
+            write_yaml_atomic(definition, output_path, overwrite=overwrite)
+            typer.echo(f"Decompiled {output_path}")
+            return
+        planned_files = plan_source_tree(definition, layout)
+        if dry_run:
+            validate_source_tree_output(output_path, overwrite=overwrite)
+            for planned_file in planned_files:
+                typer.echo(f"CREATE {planned_file.relative_path.as_posix()}")
+            return
+        write_source_tree_atomic(planned_files, output_path, overwrite=overwrite)
     except OSError as error:
         _exit_with_error(output_path, ErrorReport.output(error))
     typer.echo(f"Decompiled {output_path}")

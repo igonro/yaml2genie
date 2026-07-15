@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from yaml2genie import compile_definition
+from yaml2genie import compile_definition, rendering
 from yaml2genie.cli import app
 from yaml2genie.errors import ErrorExitCode
 
@@ -185,3 +185,246 @@ def test_decompile_requires_overwrite_and_replaces_atomically(tmp_path: Path) ->
     assert compile_definition(output_path).model_dump(exclude_none=True) == json.loads(
         input_path.read_text(encoding="utf-8"),
     )
+
+
+def test_decompile_fully_split_dry_run_prints_deterministic_file_plan(
+    tmp_path: Path,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/minimal.json"
+    output_path = tmp_path / "definition"
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout.splitlines() == [
+        "CREATE genie.yaml",
+        "CREATE config/sample_questions/00000000000000000000000000000001.yaml",
+        "CREATE instructions/text_instructions/00000000000000000000000000000002.yaml",
+        "CREATE sources/tables/sales.analytics.orders.yaml",
+    ]
+    assert not output_path.exists()
+
+
+def test_decompile_fully_split_writes_tree_that_round_trips(
+    tmp_path: Path,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/phase4_supported.json"
+    output_path = tmp_path / "definition"
+    expected = json.loads(input_path.read_text(encoding="utf-8"))
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        "version: 2\nlayout: fully-split\n"
+    )
+    assert compile_definition(output_path).model_dump(exclude_none=True) == expected
+
+
+@pytest.mark.parametrize("layout", ["grouped", "category-split", "mixed"])
+def test_decompile_layout_writes_tree_that_round_trips(
+    layout: str,
+    tmp_path: Path,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/phase4_supported.json"
+    output_path = tmp_path / "definition"
+    expected = json.loads(input_path.read_text(encoding="utf-8"))
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            layout,
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert compile_definition(output_path).model_dump(exclude_none=True) == expected
+
+
+def test_decompile_rejects_filename_collisions_without_replacing_tree(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "definition.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "data_sources": {
+                    "tables": [
+                        {"identifier": "sales.analytics.a/b"},
+                        {"identifier": "sales.analytics.a?b"},
+                    ],
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "definition"
+    output_path.mkdir()
+    original_manifest = "version: 2\nlayout: grouped\n"
+    (output_path / "genie.yaml").write_text(original_manifest, encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--overwrite",
+        ],
+    )
+
+    assert result.exit_code == ErrorExitCode.OUTPUT
+    assert "filename collisions" in result.stderr
+    assert "sales.analytics.a/b" in result.stderr
+    assert "sales.analytics.a?b" in result.stderr
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        original_manifest
+    )
+
+
+def test_decompile_source_tree_requires_overwrite_and_replaces_tree(
+    tmp_path: Path,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/minimal.json"
+    output_path = tmp_path / "definition"
+    output_path.mkdir()
+    original_manifest = "version: 2\nlayout: grouped\n"
+    (output_path / "genie.yaml").write_text(original_manifest, encoding="utf-8")
+    (output_path / "hand-edited.yaml").write_text("keep me\n", encoding="utf-8")
+
+    rejected = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+        ],
+    )
+
+    assert rejected.exit_code == ErrorExitCode.OUTPUT
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        original_manifest
+    )
+    assert (output_path / "hand-edited.yaml").is_file()
+
+    accepted = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--overwrite",
+        ],
+    )
+
+    assert accepted.exit_code == 0
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        "version: 2\nlayout: fully-split\n"
+    )
+    assert not (output_path / "hand-edited.yaml").exists()
+
+
+def test_decompile_source_tree_dry_run_respects_overwrite_protection(
+    tmp_path: Path,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/minimal.json"
+    output_path = tmp_path / "definition"
+    output_path.mkdir()
+    original_manifest = "version: 2\nlayout: grouped\n"
+    (output_path / "genie.yaml").write_text(original_manifest, encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == ErrorExitCode.OUTPUT
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        original_manifest
+    )
+
+
+def test_decompile_source_tree_restores_existing_tree_after_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    input_path = FIXTURE_ROOT / "artifacts/minimal.json"
+    output_path = tmp_path / "definition"
+    output_path.mkdir()
+    original_manifest = "version: 2\nlayout: grouped\n"
+    (output_path / "genie.yaml").write_text(original_manifest, encoding="utf-8")
+    original_rmtree = rendering.shutil.rmtree
+    calls = 0
+
+    def fail_first_cleanup(path: Path) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            msg = "simulated cleanup failure"
+            raise OSError(msg)
+        original_rmtree(path)
+
+    monkeypatch.setattr(rendering.shutil, "rmtree", fail_first_cleanup)
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--overwrite",
+        ],
+    )
+
+    assert result.exit_code == ErrorExitCode.OUTPUT
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        original_manifest
+    )
+    assert not (output_path / "config").exists()

@@ -48,7 +48,10 @@ def test_all_documented_v2_fields_compile_to_expected_definition() -> None:
     assert definition.model_dump(exclude_none=True) == expected
 
 
-@pytest.mark.parametrize("layout", ["grouped", "category-split"])
+@pytest.mark.parametrize(
+    "layout",
+    ["grouped", "category-split", "fully-split", "mixed"],
+)
 def test_decentralized_layout_compiles_to_centralized_artifact(
     layout: str,
 ) -> None:
@@ -117,6 +120,109 @@ def test_decentralized_layout_treats_missing_optional_files_as_empty(
     definition = compile_definition(root)
 
     assert definition.model_dump(exclude_none=True) == {"version": 2}
+
+
+def test_fully_split_layout_compiles_each_item_file(tmp_path: Path) -> None:
+    root = tmp_path / "fully_split_genie"
+    item_directory = root / "config" / "sample_questions"
+    item_directory.mkdir(parents=True)
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: fully-split\n",
+        encoding="utf-8",
+    )
+    (item_directory / "revenue.yaml").write_text(
+        "question: What is revenue?\n",
+        encoding="utf-8",
+    )
+
+    definition = compile_definition(root)
+
+    assert definition.config is not None
+    assert definition.config.sample_questions is not None
+    question = definition.config.sample_questions[0]
+    assert question.question == ["What is revenue?"]
+    assert len(question.id) == GENIE_ID_LENGTH
+
+
+def test_fully_split_stable_key_controls_generated_id(tmp_path: Path) -> None:
+    root = tmp_path / "fully_split_genie"
+    item_directory = root / "config" / "sample_questions"
+    item_directory.mkdir(parents=True)
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: fully-split\n",
+        encoding="utf-8",
+    )
+    item_path = item_directory / "revenue.yaml"
+    item_path.write_text(
+        "stable_key: revenue-question\nquestion: What is revenue?\n",
+        encoding="utf-8",
+    )
+
+    first = compile_definition(root)
+    item_path.rename(item_directory / "renamed.yaml")
+    second = compile_definition(root)
+
+    assert first == second
+
+
+def test_fully_split_layout_loads_nested_item_files(tmp_path: Path) -> None:
+    root = tmp_path / "fully_split_genie"
+    item_directory = root / "config" / "sample_questions" / "finance"
+    item_directory.mkdir(parents=True)
+    (root / "genie.yaml").write_text(
+        "version: 2\nlayout: fully-split\n",
+        encoding="utf-8",
+    )
+    (item_directory / "revenue.yaml").write_text(
+        "question: What is revenue?\n",
+        encoding="utf-8",
+    )
+
+    definition = compile_definition(root)
+
+    assert definition.config is not None
+    assert definition.config.sample_questions is not None
+    assert definition.config.sample_questions[0].question == ["What is revenue?"]
+
+
+def test_mixed_layout_uses_declared_source_mode_per_category(tmp_path: Path) -> None:
+    root = tmp_path / "mixed_genie"
+    (root / "config" / "sample_questions").mkdir(parents=True)
+    (root / "sources").mkdir()
+    (root / "genie.yaml").write_text(
+        "version: 2\n"
+        "layout: mixed\n"
+        "categories:\n"
+        "  config/sample_questions.yaml: items\n"
+        "  sources/tables.yaml: file\n"
+        "  sources/metric_views.yaml: items\n"
+        "  instructions/text_instructions.yaml: file\n"
+        "  instructions/sql_functions.yaml: items\n"
+        "  examples/joins.yaml: file\n"
+        "  examples/queries.yaml: file\n"
+        "  examples/filters.yaml: items\n"
+        "  examples/expressions.yaml: items\n"
+        "  examples/measures.yaml: items\n"
+        "  benchmarks/questions.yaml: items\n",
+        encoding="utf-8",
+    )
+    (root / "config" / "sample_questions" / "revenue.yaml").write_text(
+        "question: What is revenue?\n",
+        encoding="utf-8",
+    )
+    (root / "sources" / "tables.yaml").write_text(
+        "- identifier: sales.analytics.orders\n",
+        encoding="utf-8",
+    )
+
+    definition = compile_definition(root).model_dump(exclude_none=True)
+
+    assert definition["config"]["sample_questions"][0]["question"] == [
+        "What is revenue?",
+    ]
+    assert definition["data_sources"]["tables"] == [
+        {"identifier": "sales.analytics.orders"},
+    ]
 
 
 def test_decentralized_duplicate_ids_name_both_source_files(tmp_path: Path) -> None:

@@ -34,3 +34,27 @@ fields are collections. Existing validation remains shared with centralized
 YAML. When an item has no explicit ID or `stable_key`, its
 relative file path and list position provide a deterministic fallback identity;
 semantic errors name those source-relative paths.
+
+## Fully split and mixed layouts
+
+Phase 6 adds `fully-split`, which uses one YAML mapping per item below the
+directory corresponding to each `category-split` collection path with its
+`.yaml` suffix removed. For example, sample questions live at
+`config/sample_questions/<item>.yaml`. Item files are read in lexical relative
+path order. An author-supplied `stable_key` controls a generated ID across a
+file rename; otherwise the source-relative item path is its fallback identity.
+
+`mixed` requires the manifest to list every canonical category path under
+`categories`, choosing `file` for the category's list file or `items` for its
+per-item directory. This makes omitted optional content unambiguous and rejects
+unknown or undeclared YAML files. An absent declared list file or item directory
+means that optional category is empty.
+
+`decompile --layout` accepts `central`, `grouped`, `category-split`,
+`fully-split`, and `mixed`. Tree layouts produce a manifest first and then
+deterministically ordered content files. A split filename comes from the
+normalized item ID, or its identifier for ID-less data sources; it is never an
+input to JSON identity. Colliding safe filenames are rejected before writes.
+`--dry-run` prints the planned relative paths. Directory output stages the full
+tree and replaces an existing tree only with `--overwrite`; rejected plans and
+write failures preserve the old manifest and files.

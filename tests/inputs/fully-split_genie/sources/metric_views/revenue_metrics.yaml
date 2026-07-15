@@ -1,0 +1,9 @@
+identifier: sales.analytics.revenue_metrics
+description: Revenue metrics by region.
+column_configs:
+  - column_name: period
+    description: Reporting period.
+    synonyms: [month, quarter]
+    exclude: false
+    enable_format_assistance: true
+    enable_entity_matching: false

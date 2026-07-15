@@ -1,0 +1,7 @@
+id: "00000000000000000000000000000014"
+alias: high_value
+sql: orders.order_amount > 1000
+display_name: high value orders
+synonyms: [large orders, big purchases]
+comment: Filters to large orders.
+instruction: Use for high-value requests.

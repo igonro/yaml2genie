@@ -145,12 +145,12 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** Users can choose one-file-per-item layouts and can decompile JSON into any supported source organization.
 
-- [ ] Implement layout level 3: one YAML file per data source or content item under declared category directories. Require a stable key or derive one from the relative path; never use a fragile list index as identity.
-- [ ] Implement layout level 4 mixed trees, where some categories are grouped and others are split. The manifest must declare each category's source mode so the loader remains predictable.
-- [ ] Add `decompile --layout central|grouped|category-split|fully-split|mixed` with an explicit manifest template. Use safe deterministic filenames and report collisions instead of overwriting.
-- [ ] Preserve IDs when splitting; do not use filenames as output JSON identifiers. Ensure two distinct items cannot collapse to one filename.
-- [ ] Add staged directory replacement, overwrite protection, and a dry-run file plan before changing a source tree. A failure must leave both existing files and the manifest unchanged.
-- [ ] Add all four decentralization levels under `tests/inputs/` and compare their normalized output to one artifact. Include a mixed-layout round trip.
+- [x] Implement layout level 3: one YAML file per data source or content item under declared category directories. Require a stable key or derive one from the relative path; never use a fragile list index as identity.
+- [x] Implement layout level 4 mixed trees, where some categories are grouped and others are split. The manifest must declare each category's source mode so the loader remains predictable.
+- [x] Add `decompile --layout central|grouped|category-split|fully-split|mixed` with an explicit manifest template. Use safe deterministic filenames and report collisions instead of overwriting.
+- [x] Preserve IDs when splitting; do not use filenames as output JSON identifiers. Ensure two distinct items cannot collapse to one filename.
+- [x] Add staged directory replacement, overwrite protection, and a dry-run file plan before changing a source tree. A failure must leave both existing files and the manifest unchanged.
+- [x] Add all four decentralization levels under `tests/inputs/` and compare their normalized output to one artifact. Include a mixed-layout round trip.
 
 **Tests and acceptance:** Every supported layout can compile and decompile; all layouts are semantically equivalent; file names and manifests are deterministic; collision and overwrite tests are present.
 
