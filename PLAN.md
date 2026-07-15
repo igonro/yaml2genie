@@ -98,12 +98,12 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** A valid serialized definition can be inspected and edited as one readable YAML document.
 
-- [ ] Implement `yaml2genie decompile INPUT --output OUTPUT`, rejecting malformed JSON and model-invalid JSON with the same structured errors as the YAML path.
-- [ ] Accept the raw JSON object and a JSON string containing the serialized object. Keep full API-response extraction behind an explicit mode or a later phase so ambiguous objects are not silently interpreted.
-- [ ] Preserve explicit and generated IDs by default. Preserve all supported optional fields and never silently drop data during decompilation.
-- [ ] Render human-friendly YAML: use block scalars for multiline content, concise scalars for one-element string lists where safe, stable field ordering, and explicit lists when scalar coercion would be ambiguous.
-- [ ] Verify semantic round trips rather than textual equality: `normalize(compile(decompile(json)))` must equal the normalized source JSON. Add invalid JSON, missing version, and unsupported-version fixtures.
-- [ ] Reject valid-v2-but-not-yet-supported fields before creating output. Write atomically and require an explicit overwrite option when replacing hand-edited YAML.
+- [x] Implement `yaml2genie decompile INPUT --output OUTPUT`, rejecting malformed JSON and model-invalid JSON with the same structured errors as the YAML path.
+- [x] Accept the raw JSON object and a JSON string containing the serialized object. Keep full API-response extraction behind an explicit mode or a later phase so ambiguous objects are not silently interpreted.
+- [x] Preserve explicit and generated IDs by default. Preserve all supported optional fields and never silently drop data during decompilation.
+- [x] Render human-friendly YAML: use block scalars for multiline content, concise scalars for one-element string lists where safe, stable field ordering, and explicit lists when scalar coercion would be ambiguous.
+- [x] Verify semantic round trips rather than textual equality: `normalize(compile(decompile(json)))` must equal the normalized source JSON. Add invalid JSON, missing version, and unsupported-version fixtures.
+- [x] Reject valid-v2-but-not-yet-supported fields before creating output. Write atomically and require an explicit overwrite option when replacing hand-edited YAML.
 
 **Tests and acceptance:** Official-shape fixtures decompile into YAML that follows the documented block-scalar, scalar/list, field-order, indentation, and newline policy, then compile back to identical normalized JSON; malformed or unsupported JSON fails before any output file is created.
 

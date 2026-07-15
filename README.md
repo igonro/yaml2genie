@@ -30,7 +30,13 @@ collections are sorted without rewriting the source YAML.
 ```bash
 uv run yaml2genie validate tests/inputs/minimal.yaml
 uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
+uv run yaml2genie decompile definition.json --output definition.yaml
 ```
+
+`decompile` accepts a raw serialized definition object or a JSON string that
+contains that object. It writes centralized YAML with block scalars for
+multiline text and concise scalars for supported single-item string lists.
+Existing YAML is protected; pass `--overwrite` to replace it deliberately.
 
 ---
 

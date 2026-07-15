@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 
@@ -34,7 +35,10 @@ class ErrorReport:
     detail: str
 
     @classmethod
-    def source_parse(cls, error: OSError | yaml.YAMLError) -> "ErrorReport":
+    def source_parse(
+        cls,
+        error: OSError | json.JSONDecodeError | yaml.YAMLError,
+    ) -> "ErrorReport":
         if isinstance(error, yaml.MarkedYAMLError):
             problem = error.problem or "invalid YAML"
             if error.problem_mark is not None:

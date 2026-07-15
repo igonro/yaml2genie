@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import yaml
@@ -9,4 +10,13 @@ from yaml2genie.normalization import normalize
 def compile_definition(path: Path) -> DefinitionDocument:
     source: object = yaml.safe_load(path.read_text(encoding="utf-8"))
     candidate = DefinitionInput.model_validate(source)
+    return normalize(candidate)
+
+
+def decompile_definition(path: Path) -> DefinitionDocument:
+    source: object = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(source, str):
+        source = json.loads(source)
+    serialized = DefinitionDocument.model_validate(source)
+    candidate = DefinitionInput.model_validate(serialized.model_dump(exclude_none=True))
     return normalize(candidate)
