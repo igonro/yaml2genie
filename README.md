@@ -69,6 +69,21 @@ category as `file` or `items`. Generated item filenames are safe and
 deterministic, but identifiers and IDs remain document content rather than
 filename-derived data.
 
+The supported source organizations are:
+
+| Layout | Source organization | Manifest requirement |
+| --- | --- | --- |
+| `central` | One YAML document | None |
+| `grouped` | One file per top-level category group | `genie.yaml` with `layout: grouped` |
+| `category-split` | One file per serialized category | `genie.yaml` with `layout: category-split` |
+| `fully-split` | One YAML file per item under category directories | `genie.yaml` with `layout: fully-split` |
+| `mixed` | A declared combination of grouped and split categories | `genie.yaml` with per-category modes |
+
+Missing optional collection files are treated as empty. Files are concatenated
+within a declared category; yaml2genie does not deep-merge mappings or apply
+last-file-wins behavior. Source paths are part of diagnostics and fallback
+identity generation, while explicit IDs remain authoritative.
+
 For source-tree outputs, `--dry-run` prints the complete deterministic file plan
 without writing. Existing YAML files or trees are protected; pass `--overwrite`
 to replace the requested output atomically. Filename collisions fail before the
@@ -78,6 +93,13 @@ existing tree or manifest is changed.
 committed artifact without writing. It returns zero when the artifact is current
 and exit code 6 with a focused unified diff when it is stale. Source errors use
 exit code 2, schema errors 3, semantic errors 4, and output errors 5.
+
+Input errors are reported with their source path and field path, without a
+traceback by default. Unknown fields and unsupported schema versions are
+rejected; the current release supports serialized definition version 2 only.
+The tool validates shape, IDs, ordering, references, documented collection
+limits, and output determinism. SQL expressions themselves are not parsed or
+validated against a Databricks workspace.
 
 ---
 
@@ -172,6 +194,13 @@ make upgrade
 ```
 
 Individual tools can also be run through the project environment, for example `uv run prek run --all-files` or `uv run ruff check .`.
+
+### Adding a supported field
+
+Use the checklist in [CONTRIBUTING.md](CONTRIBUTING.md) for changes that extend
+the serialized definition. A new field is complete only when its contract
+evidence, model shape, normalization behavior, renderer round trip, fixture,
+focused tests, and user-facing documentation agree.
 
 ---
 

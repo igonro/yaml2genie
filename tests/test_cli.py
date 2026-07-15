@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -141,6 +142,41 @@ def test_build_replaces_existing_output_atomically(tmp_path: Path) -> None:
         output_path.read_bytes()
         == (FIXTURE_ROOT / "artifacts/minimal.json").read_bytes()
     )
+
+
+def test_build_escapes_json_content_deterministically(tmp_path: Path) -> None:
+    input_path = tmp_path / "definition.yaml"
+    input_path.write_text(
+        "version: 2\nconfig:\n  sample_questions:\n    - question: 'Qué ventas\\n'\n",
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "definition.json"
+
+    result = runner.invoke(
+        app,
+        ["build", str(input_path), "--output", str(output_path)],
+    )
+
+    assert result.exit_code == 0
+    rendered = output_path.read_text(encoding="utf-8")
+    assert '"Qué ventas\\\\n"' in rendered
+    assert json.loads(rendered)["config"]["sample_questions"][0]["question"] == [
+        "Qué ventas\\n",
+    ]
+
+
+def test_build_normalizes_yaml_line_endings(tmp_path: Path) -> None:
+    input_path = tmp_path / "definition.yaml"
+    input_path.write_bytes(b"version: 2\r\n")
+    output_path = tmp_path / "definition.yaml"
+
+    result = runner.invoke(
+        app,
+        ["build", str(input_path), "--output", str(output_path)],
+    )
+
+    assert result.exit_code == 0
+    assert output_path.read_bytes() == b"version: 2\n"
 
 
 @pytest.mark.parametrize(

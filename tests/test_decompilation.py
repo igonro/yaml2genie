@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 from yaml2genie import compile_definition, rendering
 from yaml2genie.cli import app
 from yaml2genie.errors import ErrorExitCode
+from yaml2genie.rendering import PlannedFile, write_source_tree_atomic
 
 FIXTURE_ROOT = Path(__file__).parent
 runner = CliRunner()
@@ -214,6 +215,98 @@ def test_decompile_fully_split_dry_run_prints_deterministic_file_plan(
         "CREATE sources/tables/sales.analytics.orders.yaml",
     ]
     assert not output_path.exists()
+
+
+def test_decompile_fully_split_plan_is_sorted_by_relative_path(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "definition.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "config": {
+                    "sample_questions": [
+                        {
+                            "id": "00000000000000000000000000000002",
+                            "question": ["Second"],
+                        },
+                        {
+                            "id": "00000000000000000000000000000001",
+                            "question": ["First"],
+                        },
+                    ],
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "definition"
+
+    result = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--layout",
+            "fully-split",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert result.stdout.splitlines() == [
+        "CREATE genie.yaml",
+        "CREATE config/sample_questions/00000000000000000000000000000001.yaml",
+        "CREATE config/sample_questions/00000000000000000000000000000002.yaml",
+    ]
+
+
+def test_source_tree_write_failure_preserves_existing_tree(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_path = tmp_path / "definition"
+    output_path.mkdir()
+    (output_path / "genie.yaml").write_text(
+        "version: 2\nlayout: grouped\n",
+        encoding="utf-8",
+    )
+    planned_files = [
+        PlannedFile(Path("genie.yaml"), "version: 2\nlayout: fully-split\n"),
+        PlannedFile(Path("sources/tables.yaml"), "- identifier: broken\n"),
+    ]
+    original_write_text = Path.write_text
+
+    def fail_on_tables(
+        path: Path,
+        data: str,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> int:
+        if path.name == "tables.yaml":
+            message = "simulated staging failure"
+            raise OSError(message)
+        return original_write_text(
+            path,
+            data,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+        )
+
+    monkeypatch.setattr(Path, "write_text", fail_on_tables)
+
+    with pytest.raises(OSError, match="simulated staging failure"):
+        write_source_tree_atomic(planned_files, output_path, overwrite=True)
+
+    assert (output_path / "genie.yaml").read_text(encoding="utf-8") == (
+        "version: 2\nlayout: grouped\n"
+    )
+    assert not (output_path / "sources").exists()
 
 
 def test_decompile_fully_split_writes_tree_that_round_trips(

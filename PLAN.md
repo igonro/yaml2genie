@@ -188,12 +188,12 @@ This phase starts only after Checkpoint 0 accepts the matrix. The matrix is auth
 
 **Outcome:** The project is publishable and maintainable by contributors who did not design the first version.
 
-- [ ] Add coverage reporting and enforce a sensible minimum only after the fixture matrix is complete; prioritize behavior coverage over line-count chasing.
-- [ ] Add regression tests for every bug found during implementation, especially ID stability, line endings, JSON escaping, source-tree ordering, and no-partial-write failures.
-- [ ] Run the full quality gate through `make check`, `make test`, `make lint`, `make typecheck`, `make build`, and `make format-check` using `uv`.
-- [ ] Document supported Python versions, installation, command examples, centralized and all decentralized layouts, error handling, bundle integration, and schema-version limitations.
-- [ ] Add a concise contributor guide for adding a new Databricks field: update the model, fixture, normalizer if needed, renderer, docs, and focused tests in one change.
-- [ ] Prepare a release checklist and changelog entry. Do not publish or commit from an implementation agent without the repository owner’s review at the final checkpoint.
+- [x] Add coverage reporting and enforce a sensible minimum only after the fixture matrix is complete; prioritize behavior coverage over line-count chasing.
+- [x] Add regression tests for every bug found during implementation, especially ID stability, line endings, JSON escaping, source-tree ordering, and no-partial-write failures.
+- [x] Run the full quality gate through `make check`, `make test`, `make lint`, `make typecheck`, `make build`, and `make format-check` using `uv`.
+- [x] Document supported Python versions, installation, command examples, centralized and all decentralized layouts, error handling, bundle integration, and schema-version limitations.
+- [x] Add a concise contributor guide for adding a new Databricks field: update the model, fixture, normalizer if needed, renderer, docs, and focused tests in one change.
+- [x] Prepare a release checklist and changelog entry. Do not publish or commit from an implementation agent without the repository owner’s review at the final checkpoint.
 
 **Final acceptance:** A clean checkout can install the package, validate all example inputs, build deterministic JSON artifacts, decompile them, reproduce equivalent output from every supported YAML layout, and explain every deliberate compatibility limitation.
 

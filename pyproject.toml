@@ -96,6 +96,10 @@ testpaths = ["tests"]
 [tool.coverage.run]
 omit = ["*/__init__.py"]
 
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+
 [tool.pydoclint]
 style = "google"
 exclude = ".git|.venv"
