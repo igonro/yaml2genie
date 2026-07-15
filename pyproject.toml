@@ -1,0 +1,137 @@
+[project]
+name = "yaml2genie"
+version = "0.1.0"
+description = "Compile YAML config files into a Genie Agent"
+readme = "README.md"
+authors = [
+    { name = "Iago González", email = "6860957+igonro@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+
+# CORE DEPENDENCIES: Installed for everyone
+dependencies = [
+    "requests>=2.20",
+]
+
+[project.scripts]
+yaml2genie = "yaml2genie:main"
+
+[project.optional-dependencies]
+# ---------------------------------------------------------
+# TARGET: End-users.
+# PUBLISHED TO PyPI: Yes. Included in package metadata.
+#
+# PURPOSE: Extra features/plugins for your package.
+# Use this to prevent forcing users to download heavy
+# libraries they might not need, and providing an easy
+# way to install them if they do.
+#
+# HOW TO INSTALL (End-user):
+#   pip install "yaml2genie[plot]"
+#   pip install "yaml2genie[plot,excel]"
+# ---------------------------------------------------------
+plot = [
+  "matplotlib>=3.9"
+]
+excel = [
+  "openpyxl>=3.1"
+]
+
+[dependency-groups]
+# ---------------------------------------------------------
+# TARGET: Project Contributors / Developers.
+# PUBLISHED TO PyPI: No. Completely hidden from end-users.
+#
+# PURPOSE: Local development tools (testing, linting, docs).
+# This replaces the old anti-pattern of putting dev tools
+# inside 'optional-dependencies'.
+#
+# HOW TO INSTALL (Developer, using uv):
+#   uv sync --group dev
+# ---------------------------------------------------------
+dev = [
+	"commitizen>=4.13,<5",
+	"pip>=26",
+	"prek>=0.2,<1",
+	"pydoclint>=0.8,<1",
+	"pyright>=1.1,<2",
+  "python-dotenv>=1.1,<2",
+	"ruff>=0.15,<1",
+]
+test = [
+	"pytest>=8.4,<9",
+	"pytest-asyncio>=1.3,<2",
+	"pytest-cov>=7.0,<8",
+	"pytest-sugar>=1.1,<2",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
+
+[tool.uv.build-backend]
+module-name = "yaml2genie"
+
+[tool.ruff]
+# Assume Python 3.12
+target-version = "py312"
+
+[tool.ruff.lint]
+pydocstyle.convention = "google"
+external = ["DOC"]
+
+# Enable relevant codes for this repository.
+# More info: https://docs.astral.sh/ruff/rules/
+select = ["ALL"]
+ignore = [
+    "AIR", "DJ",            # specific to Airflow and Django projects
+    "ERA",                  # allow commented code
+    "BLE",                  # allow base exceptions, useful for unknown errors
+    "CPY",                  # Copyright notes not needed
+    "FIX",                  # allow TODOs comments
+    "TD002", "TD003",       # allow TODOs without link or author
+    "D1",                   # docstrings are not mandatory
+]
+
+# Enable automatic fixes for isort only. All the other codes will be fixed manually in
+# order to have more control over the changes.
+fixable = ["I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore use of assert in tests
+"**/tests/*" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "yaml2genie",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ["*/__init__.py"]
+
+[tool.pydoclint]
+style = "google"
+exclude = ".git|.venv"
+check_style_mismatch = true
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.12"
+include = ["src/yaml2genie", "tests"]
+venvPath = "."
+venv = ".venv"
+reportPrivateImportUsage = false

@@ -1,0 +1,23 @@
+image: ghcr.io/astral-sh/uv:python3.12-trixie
+
+definitions:
+  services:
+    docker:
+      memory: 2048
+  steps:
+    - step: &quality-checks
+        name: Run quality checks
+        script:
+          - uv sync --all-groups --all-extras
+          - uv run prek run --all-files
+    - step: &tests
+        name: Run unit tests
+        script:
+          - uv sync --all-groups --all-extras
+          - uv run pytest -v tests --cov=src --cov-report=term-missing
+
+pipelines:
+  default:
+    - parallel:
+        - step: *quality-checks
+        - step: *tests

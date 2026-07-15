@@ -1,0 +1,56 @@
+# Prek Hook Configuration
+# ===================================================================
+# This file configures prek, which runs a series of
+# automated checks on the code before a commit is finalized. This helps
+# enforce code quality, style, and consistency across the project.
+
+repos:
+  # Repository for Ruff, an extremely fast Python linter and code formatter.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+
+    # Pin to a specific version for reproducible checks.
+    # Run `prek autoupdate` to update to the latest version. Make sure to commit
+    # the updated version to keep the configuration consistent across team members.
+    rev: v0.15.21
+    hooks:
+      # Linter hook: Checks for code errors, style issues, and bugs.
+      - id: ruff-check
+        # --fix: Attempts to automatically fix any fixable errors.
+        # --exit-non-zero-on-fix: Ensures the commit fails if files were modified,
+        #   prompting the user to stage the new changes.
+        args: [--fix, --exit-non-zero-on-fix]
+      # Formatter hook: Ensures code formatting is consistent.
+      - id: ruff-format
+
+  # Repository for Commitizen, a tool to standardize commit messages.
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.13.9
+    hooks:
+      - id: commitizen
+
+  # Repository for common Git hooks, a collection of useful checks.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+
+  # Repository for uv hooks, a tool to manage Python virtual environments and dependencies.
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.2
+    hooks:
+      - id: uv-lock
+
+  # Repository for pyright-python, a static type checker for Python.
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.408
+    hooks:
+      - id: pyright
+
+  # Repository for pydoclint, a tool to enforce docstring conventions and quality.
+  - repo: https://github.com/jsh9/pydoclint
+    rev: 0.8.3
+    hooks:
+      - id: pydoclint
