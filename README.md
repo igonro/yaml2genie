@@ -26,11 +26,32 @@ Generated JSON is stable across repeated builds. Explicit valid IDs are
 preserved, omitted IDs are generated deterministically, and service-required
 collections are sorted without rewriting the source YAML.
 
+## Installation
+
+Install the published package with `pip`:
+
+```bash
+pip install yaml2genie
+```
+
+For an isolated command-line installation, use `uv`:
+
+```bash
+uv tool install yaml2genie
+```
+
+After installation, the `yaml2genie` command is available directly in your
+shell. Verify the installation with:
+
+```bash
+yaml2genie --version
+```
+
 ## Adopt A Genie Agent
 
 The recommended workflow keeps editable YAML as the source of truth and commits
 the generated `genie.lock.json` definition alongside it. You need an
-authenticated Databricks CLI profile and `yaml2genie` available through `uv`.
+authenticated Databricks CLI profile and the installed `yaml2genie` command.
 
 ### Import an existing Agent
 
@@ -41,11 +62,11 @@ keeps each top-level category in a focused YAML file:
 
 ```bash
 databricks genie get-space <space-id> --include-serialized-space \
-    | uv run yaml2genie decompile - --output genie --layout category-split --omit-ids
+    | yaml2genie decompile - --output genie --layout category-split --omit-ids
 
-uv run yaml2genie validate genie
-uv run yaml2genie build genie --output genie.lock.json
-uv run yaml2genie check genie --artifact genie.lock.json
+yaml2genie validate genie
+yaml2genie build genie --output genie.lock.json
+yaml2genie check genie --artifact genie.lock.json
 ```
 
 The resulting `genie/` tree contains a `genie.yaml` manifest plus category
@@ -59,9 +80,9 @@ Generate a complete supported version-2 JSON example, then decompile it into
 the same editable layout:
 
 ```bash
-uv run yaml2genie example --output genie.example.json
-uv run yaml2genie decompile genie.example.json --output genie --layout category-split
-uv run yaml2genie build genie --output genie.lock.json
+yaml2genie example --output genie.example.json
+yaml2genie decompile genie.example.json --output genie --layout category-split
+yaml2genie build genie --output genie.lock.json
 ```
 
 The example includes every currently supported serialized field. Replace its
@@ -130,33 +151,33 @@ managed.
 
 ```bash
 # Validate without writing files
-uv run yaml2genie validate tests/inputs/minimal.yaml
+yaml2genie validate tests/inputs/minimal.yaml
 
 # Build deterministic JSON; existing files are replaced atomically
-uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
-uv run yaml2genie build tests/inputs/grouped_genie --output definition.json
+yaml2genie build tests/inputs/minimal.yaml --output definition.json
+yaml2genie build tests/inputs/grouped_genie --output definition.json
 
 # Write a complete supported version-2 JSON example
-uv run yaml2genie example --output genie.example.json
+yaml2genie example --output genie.example.json
 
 # Check a committed artifact; stale output returns exit code 6
-uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
+yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
 
 # Convert JSON back to centralized YAML
-uv run yaml2genie decompile definition.json --output definition.yaml
+yaml2genie decompile definition.json --output definition.yaml
 
 # Pretty YAML is the default; use raw representation-preserving YAML if needed
-uv run yaml2genie decompile definition.json --output definition.yaml --raw
+yaml2genie decompile definition.json --output definition.yaml --raw
 
 # Omit imported generated IDs from editable YAML; builds regenerate them
-uv run yaml2genie decompile definition.json --output definition.yaml --omit-ids
+yaml2genie decompile definition.json --output definition.yaml --omit-ids
 
 # Convert JSON to a source tree or inspect its write plan
-uv run yaml2genie decompile definition.json --output genie --layout fully-split
-uv run yaml2genie decompile definition.json --output genie --layout mixed --dry-run
+yaml2genie decompile definition.json --output genie --layout fully-split
+yaml2genie decompile definition.json --output genie --layout mixed --dry-run
 
 # Stream centralized YAML/JSON through stdin/stdout
-cat tests/inputs/minimal.yaml | uv run yaml2genie build - --output - --format json
+cat tests/inputs/minimal.yaml | yaml2genie build - --output - --format json
 ```
 
 The core commands are `validate`, `build`, `decompile`, and `check`. Use
