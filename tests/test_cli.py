@@ -95,6 +95,20 @@ def test_build_supports_stdin_stdout_and_yaml_format() -> None:
     assert result.stdout == "version: 2\n"
 
 
+def test_example_writes_complete_supported_definition(tmp_path: Path) -> None:
+    output_path = tmp_path / "genie.example.json"
+    expected = json.loads(
+        (FIXTURE_ROOT / "artifacts/phase4_supported.json").read_text(
+            encoding="utf-8",
+        ),
+    )
+
+    result = runner.invoke(app, ["example", "--output", str(output_path)])
+
+    assert result.exit_code == 0
+    assert json.loads(output_path.read_text(encoding="utf-8")) == expected
+
+
 def test_decompile_supports_stdout() -> None:
     input_path = FIXTURE_ROOT / "artifacts/minimal.json"
 
@@ -185,6 +199,7 @@ def test_build_normalizes_yaml_line_endings(tmp_path: Path) -> None:
         ["--help"],
         ["validate", "--help"],
         ["build", "--help"],
+        ["example", "--help"],
         ["decompile", "--help"],
         ["check", "--help"],
     ],
@@ -203,6 +218,7 @@ def test_root_help_describes_each_command() -> None:
     assert result.exit_code == 0
     assert "validate Validate a Genie Agent definition." in help_text
     assert "build Compile a definition into Genie Agent JSON or YAML." in help_text
+    assert "example Write a complete supported Genie Agent JSON example." in help_text
     assert "decompile Convert Genie Agent JSON to YAML source." in help_text
     assert "check Compare a generated artifact with its source." in help_text
 

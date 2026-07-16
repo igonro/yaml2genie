@@ -79,6 +79,37 @@ def test_decompile_accepts_escaped_serialized_object(tmp_path: Path) -> None:
     assert compile_definition(output_path).model_dump(exclude_none=True) == expected
 
 
+def test_decompile_accepts_databricks_get_space_response(tmp_path: Path) -> None:
+    expected = json.loads(
+        (FIXTURE_ROOT / "artifacts/phase1_supported.json").read_text(
+            encoding="utf-8",
+        ),
+    )
+    input_path = tmp_path / "get-space-response.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "etag": "test-etag",
+                "parent_path": "/Users/test@example.com",
+                "serialized_space": json.dumps(expected),
+                "space_id": "01f17f784c701bce84a1415424937544",
+                "title": "Sales Assistant",
+                "warehouse_id": "1234567890123456",
+            },
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / "definition.yaml"
+
+    result = runner.invoke(
+        app,
+        ["decompile", str(input_path), "--output", str(output_path)],
+    )
+
+    assert result.exit_code == 0
+    assert compile_definition(output_path).model_dump(exclude_none=True) == expected
+
+
 def test_decompile_renders_readable_yaml(tmp_path: Path) -> None:
     input_path = tmp_path / "serialized.json"
     input_path.write_text(

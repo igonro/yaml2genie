@@ -46,6 +46,7 @@ establish observed shape but not requiredness.
 | `data_sources.tables[].description` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs` | object-list (bounded) | optional | at most 10,000 items | `column_name` | `(table_identifier, column_name)` agent-wide | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].column_name` | string scalar | unknown | 25,000 characters | parent collection | `(table_identifier, column_name)` agent-wide | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.tables[].column_configs[].display_name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | observed | <https://docs.databricks.com/aws/en/genie-agents/conversation-api>; live `get-space` response, 2026-07-16 |
 | `data_sources.tables[].column_configs[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.tables[].column_configs[].exclude` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -56,6 +57,7 @@ establish observed shape but not requiredness.
 | `data_sources.metric_views[].description` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.metric_views[].column_configs` | object-list (bounded) | optional | at most 10,000 items | `column_name` | `(table_identifier, column_name)` wording is unresolved for metric views | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.metric_views[].column_configs[].column_name` | string scalar | unknown | 25,000 characters | parent collection | metric-view scope unresolved | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `data_sources.metric_views[].column_configs[].display_name` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | observed | <https://docs.databricks.com/aws/en/genie-agents/conversation-api>; live `get-space` response, 2026-07-16 |
 | `data_sources.metric_views[].column_configs[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.metric_views[].column_configs[].synonyms` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `data_sources.metric_views[].column_configs[].exclude` | boolean scalar | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -162,6 +164,11 @@ least `CAN EDIT` ([Create](https://docs.databricks.com/api/workspace/genie/creat
 [Update](https://docs.databricks.com/api/workspace/genie/updatespace),
 [Get](https://docs.databricks.com/api/workspace/genie/getspace)). The unescaped
 object is the `.geniespace.json` file content used by bundles.
+
+`decompile` accepts the raw object, an escaped serialized string, and the full
+Get response. For the response form it extracts and decodes `serialized_space`;
+deployment metadata in the wrapper is intentionally not added to the YAML
+definition.
 
 Deployment fields such as `title`, `description`, `warehouse_id`, `parent_path`,
 `etag`, lifecycle, and permissions are outside the serialized definition. In a

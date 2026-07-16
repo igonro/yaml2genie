@@ -66,6 +66,7 @@ PHASE_0_FIXTURES = (
     Path("inputs/unsupported_version.json"),
     Path("inputs/unsupported_field.json"),
     Path("inputs/bundle/databricks.yml"),
+    Path("inputs/bundle/genie.lock.json"),
     Path("artifacts/minimal.json"),
     Path("artifacts/phase1_supported.json"),
     Path("artifacts/phase4_supported.json"),
@@ -86,10 +87,11 @@ def test_phase_0_fixture_exists(relative_path: Path) -> None:
 
 def test_phase_0_inventory_declares_every_fixture() -> None:
     actual = {
-        path.relative_to(FIXTURE_ROOT)
+        relative_path
         for directory in (FIXTURE_ROOT / "inputs", FIXTURE_ROOT / "artifacts")
         for path in directory.rglob("*")
         if path.is_file()
+        if ".databricks" not in (relative_path := path.relative_to(FIXTURE_ROOT)).parts
     }
 
     assert actual == set(PHASE_0_FIXTURES)
@@ -116,7 +118,13 @@ def test_contract_matrix_rows_have_acceptance_metadata() -> None:
         assert len(cells) == MATRIX_COLUMN_COUNT
         assert cells[2] in {"required", "optional", "unknown"}
         assert cells[7] in {"supported", "deferred"}
-        assert cells[8] in {"documented", "example-only", "inferred", "unknown"}
+        assert cells[8] in {
+            "documented",
+            "example-only",
+            "inferred",
+            "observed",
+            "unknown",
+        }
         assert "https://" in cells[9]
 
 

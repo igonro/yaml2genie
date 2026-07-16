@@ -15,6 +15,7 @@ from yaml2genie.compiler import (
     decompile_json_text,
 )
 from yaml2genie.errors import DefinitionError, ErrorReport
+from yaml2genie.examples import complete_example
 from yaml2genie.models import DefinitionDocument
 from yaml2genie.rendering import (
     plan_source_tree,
@@ -152,6 +153,25 @@ def build(
     except OSError as error:
         _exit_with_error(output_path, ErrorReport.output(error))
     _success(ctx, f"Built {output_path}")
+
+
+@app.command(help="Write a complete supported Genie Agent JSON example.")
+def example(
+    ctx: typer.Context,
+    output_path: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Output path, or '-' for standard output."),
+    ] = Path("-"),
+) -> None:
+    definition = complete_example()
+    if str(output_path) == "-":
+        typer.echo(_render_definition(definition, "json"), nl=False)
+        return
+    try:
+        write_json_atomic(definition, output_path)
+    except OSError as error:
+        _exit_with_error(output_path, ErrorReport.output(error))
+    _success(ctx, f"Wrote example to {output_path}")
 
 
 @app.command(help="Convert Genie Agent JSON to YAML source.")

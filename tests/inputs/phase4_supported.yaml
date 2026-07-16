@@ -8,6 +8,7 @@ data_sources:
     - identifier: sales.analytics.orders
       column_configs:
         - column_name: order_amount
+          display_name: Order amount
           synonyms:
             - revenue
             - sales
@@ -16,6 +17,7 @@ data_sources:
       description: Revenue metrics by region.
       column_configs:
         - column_name: period
+          display_name: Reporting period
           description: Reporting period.
           synonyms: [month, quarter]
           exclude: false

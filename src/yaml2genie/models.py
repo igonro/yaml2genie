@@ -87,6 +87,7 @@ class ConfigInput(StrictModel):
 
 class ColumnConfigInput(StrictModel):
     column_name: BoundedString
+    display_name: BoundedString | None = None
     description: StringList | None = None
     synonyms: StringList | None = None
     exclude: bool | None = None
@@ -257,6 +258,7 @@ class Config(StrictModel):
 
 class ColumnConfig(StrictModel):
     column_name: BoundedString
+    display_name: BoundedString | None = None
     description: list[BoundedString] | None = Field(
         default=None,
         max_length=MAX_ITEMS,

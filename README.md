@@ -26,6 +26,106 @@ Generated JSON is stable across repeated builds. Explicit valid IDs are
 preserved, omitted IDs are generated deterministically, and service-required
 collections are sorted without rewriting the source YAML.
 
+## Adopt A Genie Agent
+
+The recommended workflow keeps editable YAML as the source of truth and commits
+the generated `genie.lock.json` definition alongside it. You need an
+authenticated Databricks CLI profile and `yaml2genie` available through `uv`.
+
+### Import an existing Agent
+
+`get-space --include-serialized-space` returns a management API response whose
+`serialized_space` value is an escaped JSON definition. `decompile` accepts
+that response directly. This command uses the category-split layout, which
+keeps each top-level category in a focused YAML file:
+
+```bash
+databricks genie get-space <space-id> --include-serialized-space \
+    | uv run yaml2genie decompile - --output genie --layout category-split
+
+uv run yaml2genie validate genie
+uv run yaml2genie build genie --output genie.lock.json
+uv run yaml2genie check genie --artifact genie.lock.json
+```
+
+The resulting `genie/` tree contains a `genie.yaml` manifest plus category
+files such as `sources/tables.yaml` and `instructions/text_instructions.yaml`.
+Edit those YAML files, rebuild `genie.lock.json`, and review both source and
+generated changes together.
+
+### Start without an existing Agent
+
+Generate a complete supported version-2 JSON example, then decompile it into
+the same editable layout:
+
+```bash
+uv run yaml2genie example --output genie.example.json
+uv run yaml2genie decompile genie.example.json --output genie --layout category-split
+uv run yaml2genie build genie --output genie.lock.json
+```
+
+The example includes every currently supported serialized field. Replace its
+sample data-source identifiers and instructions before deployment.
+
+### Require a current lock artifact
+
+Add this local hook to your project's `.pre-commit-config.yaml`. It fails a
+commit when a changed YAML source does not match the committed lock artifact:
+
+```yaml
+repos:
+    - repo: local
+        hooks:
+            - id: yaml2genie-lock
+                name: Check Genie lock artifact
+                entry: uv run yaml2genie check genie --artifact genie.lock.json
+                language: system
+                pass_filenames: false
+                files: ^genie/.*\.ya?ml$
+```
+
+Install and exercise the hook with a pre-commit-compatible runner. This
+repository uses `prek`:
+
+```bash
+uvx prek install --hook-type pre-commit
+uvx prek run yaml2genie-lock --all-files
+```
+
+### Deploy with a bundle
+
+Reference the generated JSON from a direct Declarative Automation Bundle (DAB)
+resource. Deployment metadata belongs in the bundle; do not add it to the
+YAML definition or `genie.lock.json`.
+
+```yaml
+bundle:
+    name: sales-assistant
+    engine: direct
+
+variables:
+    warehouse_id:
+        description: SQL warehouse used by the Genie Agent
+
+resources:
+    genie_spaces:
+        sales_assistant:
+            title: Sales Assistant
+            warehouse_id: ${var.warehouse_id}
+            file_path: genie.lock.json
+```
+
+Validate before deploying, ideally first to a non-production target:
+
+```bash
+databricks bundle validate --var warehouse_id=<warehouse-id>
+databricks bundle deploy --var warehouse_id=<warehouse-id>
+```
+
+This creates or updates the bundle-managed Agent represented by the resource;
+retrieving an existing Agent does not automatically make that Agent bundle
+managed.
+
 ## Usage
 
 ```bash
@@ -35,6 +135,9 @@ uv run yaml2genie validate tests/inputs/minimal.yaml
 # Build deterministic JSON; existing files are replaced atomically
 uv run yaml2genie build tests/inputs/minimal.yaml --output definition.json
 uv run yaml2genie build tests/inputs/grouped_genie --output definition.json
+
+# Write a complete supported version-2 JSON example
+uv run yaml2genie example --output genie.example.json
 
 # Check a committed artifact; stale output returns exit code 6
 uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/minimal.json
@@ -57,10 +160,10 @@ operation messages, and `--verbose` prints diagnostic context to stderr.
 
 `build` accepts YAML files or declared source trees and writes JSON by default.
 Use `--format yaml` or a `.yaml`/`.yml` output suffix for YAML. `decompile`
-accepts a raw serialized definition object or a JSON string that contains that
-object, and writes YAML by default. Both commands accept `-` for centralized
-stdin/stdout. Source-tree layouts require a directory output and cannot be
-streamed.
+accepts a raw serialized definition object, an escaped JSON string containing
+that object, or a Databricks `get-space` response with `serialized_space`, and
+writes YAML by default. Both commands accept `-` for centralized stdin/stdout.
+Source-tree layouts require a directory output and cannot be streamed.
 
 `--layout central|grouped|category-split|fully-split|mixed` selects the
 decompile output organization. `fully-split` writes one item per declared

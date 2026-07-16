@@ -33,6 +33,10 @@ def decompile_json_text(contents: str) -> DefinitionDocument:
     source: object = json.loads(contents)
     if isinstance(source, str):
         source = json.loads(source)
+    if isinstance(source, dict) and "serialized_space" in source:
+        source = source["serialized_space"]
+        if isinstance(source, str):
+            source = json.loads(source)
     serialized = DefinitionDocument.model_validate(source)
     candidate = DefinitionInput.model_validate(serialized.model_dump(exclude_none=True))
     return normalize(candidate)
