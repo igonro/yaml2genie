@@ -1,4 +1,4 @@
-.PHONY: _check-tools _sync setup clean upgrade test check check-cli lint format format-check typecheck build
+.PHONY: _check-tools _sync setup clean upgrade test check check-cli lint format format-check typecheck build release-dry-run release-patch release-minor release-major
 
 .DEFAULT_GOAL := help
 
@@ -82,3 +82,15 @@ typecheck: _sync ## Check types with Pyright
 
 build: _sync ## Build the package
 	@uv build
+
+release-dry-run: _sync ## Preview the next version and changelog update
+	@uv run cz bump --dry-run --yes
+
+release-patch: _sync ## Bump the patch version, changelog, commit, and tag
+	@uv run cz bump --increment PATCH --yes
+
+release-minor: _sync ## Bump the minor version, changelog, commit, and tag
+	@uv run cz bump --increment MINOR --yes
+
+release-major: _sync ## Bump the major version, changelog, commit, and tag
+	@uv run cz bump --increment MAJOR --yes
