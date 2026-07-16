@@ -2,7 +2,7 @@
 
 **Status: accepted**
 
-When a YAML item omits an ID, yaml2genie will generate a deterministic 32-character lowercase hexadecimal ID and preserve explicit valid IDs. Stable IDs make repeated builds reviewable and keep references from changing merely because the CLI was run again. A stable YAML key or source identity will be preferred; canonical item content is the fallback. UUID v7 remains an option only if Databricks later requires time-ordered random IDs, because the current contract only requires the lowercase hexadecimal format.
+When a YAML item omits an ID, yaml2genie will generate a deterministic 32-character lowercase hexadecimal ID and preserve explicit valid IDs. The generated ID starts with a collection rank and zero-padded source position, followed by a content/identity digest. This makes Databricks' lexical ID sort preserve YAML order within a collection and group generated instruction items by type. A stable YAML key or source identity will be preferred; canonical item content is the fallback. UUID v7 remains an option only if Databricks later requires time-ordered random IDs, because the current contract only requires the lowercase hexadecimal format.
 
 `decompile --omit-ids` is an explicit presentation choice for editable YAML.
 It produces source that recompiles to valid deterministic IDs, but cannot

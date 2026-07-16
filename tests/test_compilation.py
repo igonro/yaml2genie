@@ -513,6 +513,62 @@ def test_omitted_ids_are_valid_stable_and_explicit_ids_survive(tmp_path: Path) -
     assert second == first
 
 
+def test_generated_ids_encode_collection_and_source_order(tmp_path: Path) -> None:
+    source_path = tmp_path / "definition.yaml"
+    source_path.write_text(
+        """version: 2
+instructions:
+  example_question_sqls:
+    - question: First query
+      sql: SELECT 1
+    - question: Second query
+      sql: SELECT 2
+  join_specs:
+    - left:
+        identifier: sales.analytics.orders
+        alias: orders
+      right:
+        identifier: sales.analytics.customers
+        alias: customers
+      sql:
+        - '`orders`.`customer_id` = `customers`.`customer_id`'
+        - '--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--'
+  sql_snippets:
+    filters:
+      - sql: orders.total > 10
+    measures:
+      - sql: SUM(orders.total)
+""",
+        encoding="utf-8",
+    )
+
+    document = compile_definition(source_path)
+    assert document.instructions is not None
+    assert document.instructions.example_question_sqls is not None
+    assert document.instructions.join_specs is not None
+    assert document.instructions.sql_snippets is not None
+    assert document.instructions.sql_snippets.filters is not None
+    assert document.instructions.sql_snippets.measures is not None
+
+    query_ids = [item.id for item in document.instructions.example_question_sqls]
+    assert query_ids == sorted(query_ids)
+    assert query_ids[0][:2] == "05"
+    assert query_ids[1][:2] == "05"
+    assert query_ids[0][2:8] == "000000"
+    assert query_ids[1][2:8] == "000001"
+
+    instruction_ids = [
+        *query_ids,
+        document.instructions.join_specs[0].id,
+        document.instructions.sql_snippets.filters[0].id,
+        document.instructions.sql_snippets.measures[0].id,
+    ]
+    assert instruction_ids == sorted(instruction_ids)
+    assert instruction_ids[-3][:2] == "07"
+    assert instruction_ids[-2][:2] == "08"
+    assert instruction_ids[-1][:2] == "0a"
+
+
 @pytest.mark.parametrize(
     ("fixture_name", "error_type", "message"),
     [

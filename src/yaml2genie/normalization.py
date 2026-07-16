@@ -134,7 +134,7 @@ def _collection(document: JsonObject, path: tuple[str, ...]) -> list[JsonObject]
     return cast("list[JsonObject]", value) if isinstance(value, list) else []
 
 
-def _generated_id(
+def _generated_identity(
     path: tuple[str, ...],
     item: JsonObject,
     source_identity: str | None,
@@ -156,13 +156,28 @@ def _generated_id(
             }
         ),
     }
-    canonical = json.dumps(
+    return json.dumps(
         identity,
         ensure_ascii=True,
         separators=(",", ":"),
         sort_keys=True,
     )
-    return hashlib.blake2b(canonical.encode(), digest_size=16).hexdigest()
+
+
+def _generated_id(
+    path: tuple[str, ...],
+    item: JsonObject,
+    source_identity: str | None,
+    position: int,
+) -> str:
+    digest = hashlib.blake2b(
+        _generated_identity(path, item, source_identity).encode(),
+        digest_size=12,
+    ).hexdigest()
+    category_rank = next(
+        index for index, descriptor in enumerate(COLLECTIONS) if descriptor.path == path
+    )
+    return f"{category_rank:02x}{position:06x}{digest}"
 
 
 def _item_key(item: JsonObject, fields: tuple[str, ...]) -> CollectionKey:
@@ -186,6 +201,7 @@ def _normalize_collection(
     source_locations: list[str] | None = None,
 ) -> None:
     stable_keys: list[LocatedValue] = []
+    generated_identities: list[LocatedValue] = []
     for index, item in enumerate(items):
         model_location = f"{descriptor.source_path}[{index}]"
         source_location = (
@@ -201,10 +217,18 @@ def _normalize_collection(
         if "stable_key" in item:
             stable_keys.append((item["stable_key"], f"{location}.stable_key"))
         if descriptor.id_required:
+            if not item.get("id"):
+                generated_identities.append(
+                    (
+                        _generated_identity(descriptor.path, item, source_location),
+                        f"{location}.id",
+                    ),
+                )
             item["id"] = item.get("id") or _generated_id(
                 descriptor.path,
                 item,
                 source_location,
+                index,
             )
         item.pop("stable_key", None)
         if descriptor.uniqueness_scope and descriptor.uniqueness_key:
@@ -215,6 +239,7 @@ def _normalize_collection(
                 ),
             )
     _require_unique(stable_keys, descriptor.source_path)
+    _require_unique(generated_identities, descriptor.source_path)
     items.sort(key=lambda item: _item_key(item, descriptor.sort_key))
 
 
