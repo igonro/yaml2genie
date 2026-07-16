@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -213,7 +214,8 @@ def test_every_command_has_help(arguments: list[str]) -> None:
 
 def test_root_help_describes_each_command() -> None:
     result = runner.invoke(app, ["--help"])
-    help_text = " ".join(result.stdout.split())
+    unstyled_help = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stdout)
+    help_text = " ".join(unstyled_help.split())
 
     assert result.exit_code == 0
     assert "validate Validate a Genie Agent definition." in help_text
