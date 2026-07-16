@@ -1,16 +1,233 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
+import yaml
 from typer.testing import CliRunner
 
 from yaml2genie import compile_definition, rendering
 from yaml2genie.cli import app
 from yaml2genie.errors import ErrorExitCode
+from yaml2genie.models import DefinitionDocument
 from yaml2genie.rendering import PlannedFile, write_source_tree_atomic
 
 FIXTURE_ROOT = Path(__file__).parent
 runner = CliRunner()
+
+
+def test_yaml_presentation_is_schema_aware_and_raw_is_lossless() -> None:
+    document = DefinitionDocument.model_validate(
+        {
+            "version": 2,
+            "config": {
+                "sample_questions": [
+                    {
+                        "id": "00000000000000000000000000000001",
+                        "question": ["First line\r\n", "Second line\n", "Last line"],
+                    },
+                ],
+            },
+            "data_sources": {
+                "tables": [
+                    {
+                        "identifier": "catalog.schema.table",
+                        "column_configs": [
+                            {"column_name": "category", "synonyms": ["kind"]},
+                        ],
+                    },
+                ],
+            },
+            "instructions": {
+                "text_instructions": [
+                    {
+                        "id": "00000000000000000000000000000003",
+                        "content": ["Keep this space \r\n", "and this line."],
+                    },
+                ],
+                "join_specs": [
+                    {
+                        "id": "00000000000000000000000000000002",
+                        "left": {
+                            "identifier": "catalog.schema.left",
+                            "alias": "left",
+                        },
+                        "right": {
+                            "identifier": "catalog.schema.right",
+                            "alias": "right",
+                        },
+                        "sql": [
+                            "SELECT " + "x" * 1_000,
+                            "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--",
+                        ],
+                    },
+                ],
+            },
+        },
+    )
+
+    pretty = rendering.render_yaml(document)
+    raw = rendering.render_yaml(
+        document,
+        options=rendering.YamlRenderOptions(pretty=False),
+    )
+    pretty_payload = yaml.safe_load(pretty)
+    raw_payload = yaml.safe_load(raw)
+
+    assert pretty_payload["config"]["sample_questions"][0]["question"] == (
+        "First line\nSecond line\nLast line"
+    )
+    assert pretty_payload["data_sources"]["tables"][0]["column_configs"][0][
+        "synonyms"
+    ] == ["kind"]
+    assert pretty_payload["instructions"]["join_specs"][0]["sql"] == [
+        "SELECT " + "x" * 1_000,
+        "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--",
+    ]
+    assert pretty_payload["instructions"]["text_instructions"][0]["content"] == (
+        "Keep this space \nand this line."
+    )
+    assert "content: |-\n        Keep this space \n" in pretty
+    assert "\\\n" not in pretty
+    assert raw_payload["config"]["sample_questions"][0]["question"] == [
+        "First line\r\n",
+        "Second line\n",
+        "Last line",
+    ]
+    assert raw_payload["data_sources"]["tables"][0]["column_configs"][0][
+        "synonyms"
+    ] == ["kind"]
+
+
+def test_decompile_cli_pretty_raw_and_json_modes_are_independent(
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "definition.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "config": {
+                    "sample_questions": [
+                        {
+                            "id": "00000000000000000000000000000001",
+                            "question": ["First\r\n", "Last"],
+                        },
+                    ],
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+
+    pretty = runner.invoke(app, ["decompile", str(input_path), "--output", "-"])
+    raw = runner.invoke(
+        app,
+        ["decompile", str(input_path), "--output", "-", "--raw"],
+    )
+    rendered_json = runner.invoke(
+        app,
+        [
+            "decompile",
+            str(input_path),
+            "--output",
+            "-",
+            "--format",
+            "json",
+            "--omit-ids",
+        ],
+    )
+
+    assert pretty.exit_code == 0
+    assert (
+        yaml.safe_load(pretty.stdout)["config"]["sample_questions"][0]["question"]
+        == "First\nLast"
+    )
+    assert raw.exit_code == 0
+    assert yaml.safe_load(raw.stdout)["config"]["sample_questions"][0]["question"] == [
+        "First\r\n",
+        "Last",
+    ]
+    assert rendered_json.exit_code == 0
+    assert (
+        json.loads(rendered_json.stdout)["config"]["sample_questions"][0]["id"]
+        == "00000000000000000000000000000001"
+    )
+
+
+@pytest.mark.parametrize(
+    "layout",
+    ["central", "grouped", "category-split", "fully-split", "mixed"],
+)
+def test_decompile_omit_ids_preserves_item_filenames_and_regenerates_ids(
+    layout: str,
+    tmp_path: Path,
+) -> None:
+    input_path = tmp_path / "definition.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "version": 2,
+                "config": {
+                    "sample_questions": [
+                        {
+                            "id": "00000000000000000000000000000001",
+                            "question": ["How many orders?"],
+                        },
+                    ],
+                },
+                "instructions": {
+                    "sql_snippets": {
+                        "filters": [
+                            {
+                                "id": "00000000000000000000000000000002",
+                                "sql": ["status = 'open'"],
+                            },
+                        ],
+                    },
+                },
+            },
+        ),
+        encoding="utf-8",
+    )
+    output_path = tmp_path / (
+        "definition.yaml" if layout == "central" else "definition"
+    )
+    arguments = [
+        "decompile",
+        str(input_path),
+        "--output",
+        str(output_path),
+        "--omit-ids",
+    ]
+    if layout != "central":
+        arguments.extend(["--layout", layout])
+
+    result = runner.invoke(app, arguments)
+
+    assert result.exit_code == 0
+    contents = (
+        output_path.read_text(encoding="utf-8")
+        if layout == "central"
+        else "\n".join(
+            path.read_text(encoding="utf-8") for path in output_path.rglob("*.yaml")
+        )
+    )
+    assert "id:" not in contents
+    if layout == "fully-split":
+        assert (
+            output_path
+            / "config/sample_questions/00000000000000000000000000000001.yaml"
+        ).is_file()
+    if layout == "mixed":
+        assert (
+            output_path / "examples/filters/00000000000000000000000000000002.yaml"
+        ).is_file()
+    compiled = compile_definition(output_path).model_dump(exclude_none=True)
+    assert re.fullmatch(
+        r"[0-9a-f]{32}",
+        compiled["config"]["sample_questions"][0]["id"],
+    )
 
 
 def test_decompile_writes_yaml_that_round_trips_to_normalized_json(

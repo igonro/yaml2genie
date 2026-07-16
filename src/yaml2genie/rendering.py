@@ -9,12 +9,77 @@ from typing import Literal, cast, override
 import yaml
 
 from yaml2genie.loaders import CATEGORY_FILES, GROUPED_FILES
-from yaml2genie.models import DefinitionDocument
+from yaml2genie.models import MAX_STRING_LENGTH, DefinitionDocument
 
 type YamlValue = (
     str | int | float | bool | None | list["YamlValue"] | dict[str, "YamlValue"]
 )
 Layout = Literal["central", "grouped", "category-split", "fully-split", "mixed"]
+YamlPath = tuple[str, ...]
+
+TEXTUAL_STRING_LIST_PATHS = frozenset(
+    {
+        ("config", "sample_questions", "[]", "question"),
+        ("data_sources", "tables", "[]", "description"),
+        ("data_sources", "tables", "[]", "column_configs", "[]", "description"),
+        ("data_sources", "metric_views", "[]", "description"),
+        (
+            "data_sources",
+            "metric_views",
+            "[]",
+            "column_configs",
+            "[]",
+            "description",
+        ),
+        ("instructions", "text_instructions", "[]", "content"),
+        ("instructions", "example_question_sqls", "[]", "question"),
+        ("instructions", "example_question_sqls", "[]", "sql"),
+        (
+            "instructions",
+            "example_question_sqls",
+            "[]",
+            "parameters",
+            "[]",
+            "description",
+        ),
+        ("instructions", "example_question_sqls", "[]", "usage_guidance"),
+        ("instructions", "join_specs", "[]", "comment"),
+        ("instructions", "join_specs", "[]", "instruction"),
+        ("instructions", "sql_snippets", "filters", "[]", "sql"),
+        ("instructions", "sql_snippets", "filters", "[]", "comment"),
+        ("instructions", "sql_snippets", "filters", "[]", "instruction"),
+        ("instructions", "sql_snippets", "expressions", "[]", "sql"),
+        ("instructions", "sql_snippets", "expressions", "[]", "comment"),
+        ("instructions", "sql_snippets", "expressions", "[]", "instruction"),
+        ("instructions", "sql_snippets", "measures", "[]", "sql"),
+        ("instructions", "sql_snippets", "measures", "[]", "comment"),
+        ("instructions", "sql_snippets", "measures", "[]", "instruction"),
+        ("benchmarks", "questions", "[]", "question"),
+        ("benchmarks", "questions", "[]", "answer", "[]", "content"),
+    },
+)
+GENERATED_ID_PATHS = frozenset(
+    {
+        ("config", "sample_questions", "[]", "id"),
+        ("benchmarks", "questions", "[]", "id"),
+        ("instructions", "text_instructions", "[]", "id"),
+        ("instructions", "example_question_sqls", "[]", "id"),
+        ("instructions", "sql_functions", "[]", "id"),
+        ("instructions", "join_specs", "[]", "id"),
+        ("instructions", "sql_snippets", "filters", "[]", "id"),
+        ("instructions", "sql_snippets", "expressions", "[]", "id"),
+        ("instructions", "sql_snippets", "measures", "[]", "id"),
+    },
+)
+
+
+@dataclass(frozen=True)
+class YamlRenderOptions:
+    pretty: bool = True
+    omit_ids: bool = False
+
+
+DEFAULT_YAML_RENDER_OPTIONS = YamlRenderOptions()
 
 
 @dataclass(frozen=True)
@@ -46,6 +111,13 @@ def render_json(definition: DefinitionDocument) -> str:
 
 class _HumanFriendlyDumper(yaml.SafeDumper):
     @override
+    def analyze_scalar(self, scalar: str) -> yaml.emitter.ScalarAnalysis:
+        analysis = super().analyze_scalar(scalar)
+        if "\n" in scalar and "\r" not in scalar:
+            analysis.allow_block = True
+        return analysis
+
+    @override
     def increase_indent(
         self,
         flow: bool = False,
@@ -65,33 +137,69 @@ def _represent_string(
 _HumanFriendlyDumper.add_representer(str, _represent_string)
 
 
-def _simplify_string_lists(value: YamlValue) -> YamlValue:
+def _present_yaml_value(
+    value: YamlValue,
+    path: YamlPath,
+    options: YamlRenderOptions,
+) -> YamlValue:
     if isinstance(value, dict):
         return {
-            key: _simplify_string_lists(nested_value)
+            key: _present_yaml_value(nested_value, (*path, key), options)
             for key, nested_value in value.items()
+            if not (options.omit_ids and (*path, key) in GENERATED_ID_PATHS)
         }
     if isinstance(value, list):
-        simplified = [_simplify_string_lists(item) for item in value]
-        if len(simplified) == 1 and isinstance(simplified[0], str):
-            return simplified[0]
-        return simplified
+        presented = [
+            _present_yaml_value(item, (*path, "[]"), options) for item in value
+        ]
+        if options.pretty and path in TEXTUAL_STRING_LIST_PATHS:
+            return _simplify_textual_list(presented)
+        return presented
     return value
 
 
-def render_yaml(definition: DefinitionDocument) -> str:
+def _simplify_textual_list(value: list[YamlValue]) -> YamlValue:
+    if not all(isinstance(item, str) for item in value):
+        return value
+    strings = cast("list[str]", value)
+    normalized = [item.replace("\r\n", "\n").replace("\r", "\n") for item in strings]
+    if len(normalized) == 1:
+        return normalized[0]
+    if all(item.endswith("\n") for item in normalized[:-1]):
+        merged = "".join(normalized)
+        if len(merged) <= MAX_STRING_LENGTH:
+            return merged
+    return cast("YamlValue", normalized)
+
+
+def render_yaml(
+    definition: DefinitionDocument,
+    *,
+    options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
+) -> str:
     document = cast("dict[str, YamlValue]", definition.model_dump(exclude_none=True))
-    return _render_yaml_payload(document)
+    return _render_yaml_payload(document, options=options)
 
 
-def _render_yaml_payload(document: YamlValue) -> str:
-    payload = _simplify_string_lists(document)
+def _render_yaml_payload(
+    document: YamlValue,
+    *,
+    options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
+    root_path: YamlPath = (),
+) -> str:
+    payload = _present_yaml_value(document, root_path, options)
+    return _dump_yaml(payload)
+
+
+def _dump_yaml(payload: YamlValue) -> str:
     return yaml.dump(
         payload,
         Dumper=_HumanFriendlyDumper,
         allow_unicode=True,
         default_flow_style=False,
+        line_break="\n",
         sort_keys=False,
+        width=1_000_000_000,
     )
 
 
@@ -104,11 +212,12 @@ def write_yaml_atomic(
     output_path: Path,
     *,
     overwrite: bool,
+    options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
 ) -> None:
     if output_path.exists() and not overwrite:
         msg = "output already exists; pass --overwrite to replace it"
         raise FileExistsError(msg)
-    _write_atomic(render_yaml(definition), output_path)
+    _write_atomic(render_yaml(definition, options=options), output_path)
 
 
 def write_text_atomic(contents: str, output_path: Path) -> None:
@@ -118,16 +227,18 @@ def write_text_atomic(contents: str, output_path: Path) -> None:
 def plan_source_tree(
     definition: DefinitionDocument,
     layout: Layout,
+    *,
+    options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
 ) -> list[PlannedFile]:
     document = cast("dict[str, YamlValue]", definition.model_dump(exclude_none=True))
     if layout == "grouped":
-        planned = _plan_grouped(document)
+        planned = _plan_grouped(document, options)
     elif layout == "category-split":
-        planned = _plan_category_split(document)
+        planned = _plan_category_split(document, options)
     elif layout == "fully-split":
-        planned = _plan_fully_split(document)
+        planned = _plan_fully_split(document, options)
     elif layout == "mixed":
-        planned = _plan_mixed(document)
+        planned = _plan_mixed(document, options)
     else:
         msg = f"unsupported source-tree layout {layout!r}"
         raise ValueError(msg)
@@ -211,35 +322,65 @@ def validate_source_tree_output(output_path: Path, *, overwrite: bool) -> None:
         raise FileExistsError(msg)
 
 
-def _plan_grouped(document: dict[str, YamlValue]) -> list[PlannedFile]:
+def _plan_grouped(
+    document: dict[str, YamlValue],
+    options: YamlRenderOptions,
+) -> list[PlannedFile]:
     planned = [_manifest_file("grouped")]
     for relative_path, categories in GROUPED_FILES.items():
-        payload = {
-            category: collection
-            for category, destination in categories.items()
-            if (collection := _collection(document, destination))
-        }
+        payload = cast(
+            "dict[str, YamlValue]",
+            {
+                category: _present_yaml_value(
+                    cast("YamlValue", collection),
+                    destination,
+                    options,
+                )
+                for category, destination in categories.items()
+                if (collection := _collection(document, destination))
+            },
+        )
         if payload:
-            planned.append(_planned_yaml(relative_path, cast("YamlValue", payload)))
+            planned.append(
+                PlannedFile(Path(relative_path), _dump_yaml(payload)),
+            )
     return planned
 
 
-def _plan_category_split(document: dict[str, YamlValue]) -> list[PlannedFile]:
+def _plan_category_split(
+    document: dict[str, YamlValue],
+    options: YamlRenderOptions,
+) -> list[PlannedFile]:
     planned = [_manifest_file("category-split")]
     for relative_path, destination in CATEGORY_FILES.items():
         if collection := _collection(document, destination):
-            planned.append(_planned_yaml(relative_path, cast("YamlValue", collection)))
+            planned.append(
+                _planned_yaml(
+                    relative_path,
+                    cast("YamlValue", collection),
+                    options,
+                    root_path=destination,
+                ),
+            )
     return planned
 
 
-def _plan_fully_split(document: dict[str, YamlValue]) -> list[PlannedFile]:
+def _plan_fully_split(
+    document: dict[str, YamlValue],
+    options: YamlRenderOptions,
+) -> list[PlannedFile]:
     planned = [_manifest_file("fully-split")]
     for relative_path, destination in CATEGORY_FILES.items():
-        planned.extend(_item_files(relative_path, _collection(document, destination)))
+        planned.extend(
+            _item_files(relative_path, _collection(document, destination), options),
+        )
     return planned
 
 
-def _plan_mixed(document: dict[str, YamlValue]) -> list[PlannedFile]:
+def _plan_mixed(
+    document: dict[str, YamlValue],
+    options: YamlRenderOptions,
+) -> list[PlannedFile]:
     manifest = cast(
         "dict[str, YamlValue]",
         {
@@ -248,15 +389,22 @@ def _plan_mixed(document: dict[str, YamlValue]) -> list[PlannedFile]:
             "categories": MIXED_CATEGORY_MODES,
         },
     )
-    planned = [_planned_yaml("genie.yaml", manifest)]
+    planned = [_planned_yaml("genie.yaml", manifest, options)]
     for relative_path, destination in CATEGORY_FILES.items():
         collection = _collection(document, destination)
         if not collection:
             continue
         if MIXED_CATEGORY_MODES[relative_path] == "file":
-            planned.append(_planned_yaml(relative_path, cast("YamlValue", collection)))
+            planned.append(
+                _planned_yaml(
+                    relative_path,
+                    cast("YamlValue", collection),
+                    options,
+                    root_path=destination,
+                ),
+            )
         else:
-            planned.extend(_item_files(relative_path, collection))
+            planned.extend(_item_files(relative_path, collection, options))
     return planned
 
 
@@ -264,8 +412,17 @@ def _manifest_file(layout: str) -> PlannedFile:
     return _planned_yaml("genie.yaml", {"version": 2, "layout": layout})
 
 
-def _planned_yaml(relative_path: str, payload: YamlValue) -> PlannedFile:
-    return PlannedFile(Path(relative_path), _render_yaml_payload(payload))
+def _planned_yaml(
+    relative_path: str,
+    payload: YamlValue,
+    options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
+    *,
+    root_path: YamlPath = (),
+) -> PlannedFile:
+    return PlannedFile(
+        Path(relative_path),
+        _render_yaml_payload(payload, options=options, root_path=root_path),
+    )
 
 
 def _collection(
@@ -287,6 +444,7 @@ def _collection(
 def _item_files(
     category_path: str,
     items: list[dict[str, YamlValue]],
+    options: YamlRenderOptions,
 ) -> list[PlannedFile]:
     directory = Path(category_path).with_suffix("")
     planned_files = []
@@ -295,7 +453,11 @@ def _item_files(
         planned_files.append(
             PlannedFile(
                 directory / f"{_safe_item_filename(item)}.yaml",
-                _render_yaml_payload(item),
+                _render_yaml_payload(
+                    item,
+                    options=options,
+                    root_path=(*CATEGORY_FILES[category_path], "[]"),
+                ),
                 source_identity,
             ),
         )

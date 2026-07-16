@@ -41,7 +41,7 @@ keeps each top-level category in a focused YAML file:
 
 ```bash
 databricks genie get-space <space-id> --include-serialized-space \
-    | uv run yaml2genie decompile - --output genie --layout category-split
+    | uv run yaml2genie decompile - --output genie --layout category-split --omit-ids
 
 uv run yaml2genie validate genie
 uv run yaml2genie build genie --output genie.lock.json
@@ -145,6 +145,12 @@ uv run yaml2genie check tests/inputs/minimal.yaml --artifact tests/artifacts/min
 # Convert JSON back to centralized YAML
 uv run yaml2genie decompile definition.json --output definition.yaml
 
+# Pretty YAML is the default; use raw representation-preserving YAML if needed
+uv run yaml2genie decompile definition.json --output definition.yaml --raw
+
+# Omit imported generated IDs from editable YAML; builds regenerate them
+uv run yaml2genie decompile definition.json --output definition.yaml --omit-ids
+
 # Convert JSON to a source tree or inspect its write plan
 uv run yaml2genie decompile definition.json --output genie --layout fully-split
 uv run yaml2genie decompile definition.json --output genie --layout mixed --dry-run
@@ -171,6 +177,25 @@ category directory. `mixed` writes a manifest that explicitly declares every
 category as `file` or `items`. Generated item filenames are safe and
 deterministic, but identifiers and IDs remain document content rather than
 filename-derived data.
+
+Decompile writes human-readable YAML by default (`--pretty`): eligible text
+fields use scalar shorthand and literal block scalars, internal CRLF/CR is
+normalized to LF, and unambiguous newline-chunked text arrays are combined.
+Long scalar lines are not wrapped by the YAML dumper. Semantic arrays such as
+synonyms, parameter default values, and join SQL tuples remain lists.
+`--raw` retains validated imported string-array boundaries and embedded CRLF;
+it is representation-preserving for these fields, rather than byte-for-byte
+source preservation. These presentation options affect YAML only; JSON
+decompile output remains the validated JSON representation.
+
+`--omit-ids` independently removes generated item IDs from YAML output while
+retaining any `stable_key` supplied in YAML source. Compiling that YAML creates
+valid deterministic IDs, but their values and collection ordering can differ
+from the imported Agent. This may affect deployment identity continuity, and
+items with identical content need explicit IDs or distinct `stable_key` values
+to avoid the existing duplicate-ID validation error. In fully split and mixed
+layouts, imported IDs are still used to plan item filenames before they are
+omitted from contents.
 
 The supported source organizations are:
 

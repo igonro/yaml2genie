@@ -18,6 +18,8 @@ from yaml2genie.errors import DefinitionError, ErrorReport
 from yaml2genie.examples import complete_example
 from yaml2genie.models import DefinitionDocument
 from yaml2genie.rendering import (
+    DEFAULT_YAML_RENDER_OPTIONS,
+    YamlRenderOptions,
     plan_source_tree,
     render_json,
     render_yaml,
@@ -51,6 +53,23 @@ FormatOption = Annotated[
     typer.Option(
         "--format",
         help="Output format. 'auto' uses the output suffix, or JSON for stdout.",
+    ),
+]
+PrettyOption = Annotated[
+    bool,
+    typer.Option(
+        "--pretty/--raw",
+        help=(
+            "Pretty YAML normalizes newlines and combines newline-chunked "
+            "text arrays; raw retains imported string-array boundaries and CRLF."
+        ),
+    ),
+]
+OmitIdsOption = Annotated[
+    bool,
+    typer.Option(
+        "--omit-ids",
+        help="Omit generated item IDs from YAML; build regenerates deterministic IDs.",
     ),
 ]
 
@@ -185,12 +204,15 @@ def decompile(  # noqa: PLR0913
     ] = False,
     layout: LayoutOption = "central",
     output_format: FormatOption = "auto",
+    pretty: PrettyOption = True,  # noqa: FBT002
+    omit_ids: OmitIdsOption = False,  # noqa: FBT002
     dry_run: Annotated[  # noqa: FBT002
         bool,
         typer.Option("--dry-run"),
     ] = False,
 ) -> None:
     definition = _decompile_or_exit(input_path, ctx)
+    yaml_options = YamlRenderOptions(pretty=pretty, omit_ids=omit_ids)
     if str(output_path) == "-":
         if layout != "central":
             _exit_with_error(
@@ -203,6 +225,7 @@ def decompile(  # noqa: PLR0913
             _render_definition(
                 definition,
                 _resolve_format(output_format, output_path, default="yaml"),
+                yaml_options=yaml_options,
             ),
             nl=False,
         )
@@ -212,10 +235,15 @@ def decompile(  # noqa: PLR0913
             if dry_run:
                 _success(ctx, f"CREATE {output_path.name}")
                 return
-            write_yaml_atomic(definition, output_path, overwrite=overwrite)
+            write_yaml_atomic(
+                definition,
+                output_path,
+                overwrite=overwrite,
+                options=yaml_options,
+            )
             _success(ctx, f"Decompiled {output_path}")
             return
-        planned_files = plan_source_tree(definition, layout)
+        planned_files = plan_source_tree(definition, layout, options=yaml_options)
         if dry_run:
             validate_source_tree_output(output_path, overwrite=overwrite)
             for planned_file in planned_files:
@@ -279,9 +307,13 @@ def _resolve_format(
 def _render_definition(
     definition: DefinitionDocument,
     output_format: Literal["json", "yaml"],
+    *,
+    yaml_options: YamlRenderOptions = DEFAULT_YAML_RENDER_OPTIONS,
 ) -> str:
     return (
-        render_json(definition) if output_format == "json" else render_yaml(definition)
+        render_json(definition)
+        if output_format == "json"
+        else render_yaml(definition, options=yaml_options)
     )
 
 
