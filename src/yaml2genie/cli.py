@@ -125,13 +125,13 @@ def _decompile_or_exit(input_path: str, ctx: typer.Context) -> DefinitionDocumen
         _exit_with_error(Path(input_path), ErrorReport.semantic(error))
 
 
-@app.command()
+@app.command(help="Validate a Genie Agent definition.")
 def validate(ctx: typer.Context, input_path: InputPath) -> None:
     _compile_or_exit(input_path, ctx)
     _success(ctx, "Valid Genie Agent definition.")
 
 
-@app.command()
+@app.command(help="Compile a definition into Genie Agent JSON or YAML.")
 def build(
     ctx: typer.Context,
     input_path: InputPath,
@@ -154,7 +154,7 @@ def build(
     _success(ctx, f"Built {output_path}")
 
 
-@app.command()
+@app.command(help="Convert Genie Agent JSON to YAML source.")
 def decompile(  # noqa: PLR0913
     ctx: typer.Context,
     input_path: InputPath,
@@ -207,7 +207,7 @@ def decompile(  # noqa: PLR0913
     _success(ctx, f"Decompiled {output_path}")
 
 
-@app.command()
+@app.command(help="Compare a generated artifact with its source.")
 def check(
     ctx: typer.Context,
     input_path: InputPath,

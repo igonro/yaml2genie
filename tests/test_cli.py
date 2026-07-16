@@ -196,6 +196,17 @@ def test_every_command_has_help(arguments: list[str]) -> None:
     assert "Usage:" in result.stdout
 
 
+def test_root_help_describes_each_command() -> None:
+    result = runner.invoke(app, ["--help"])
+    help_text = " ".join(result.stdout.split())
+
+    assert result.exit_code == 0
+    assert "validate Validate a Genie Agent definition." in help_text
+    assert "build Compile a definition into Genie Agent JSON or YAML." in help_text
+    assert "decompile Convert Genie Agent JSON to YAML source." in help_text
+    assert "check Compare a generated artifact with its source." in help_text
+
+
 def test_version_output() -> None:
     result = runner.invoke(app, ["--version"])
 
