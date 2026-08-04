@@ -247,7 +247,7 @@ def test_decompile_writes_yaml_that_round_trips_to_normalized_json(
     assert compile_definition(output_path).model_dump(exclude_none=True) == expected
 
 
-def test_decompile_preserves_all_documented_v2_fields(tmp_path: Path) -> None:
+def test_decompile_preserves_all_supported_v2_fields(tmp_path: Path) -> None:
     input_path = FIXTURE_ROOT / "artifacts/phase4_supported.json"
     output_path = tmp_path / "definition.yaml"
     expected = json.loads(input_path.read_text(encoding="utf-8"))
@@ -258,6 +258,10 @@ def test_decompile_preserves_all_documented_v2_fields(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
+    rendered = yaml.safe_load(output_path.read_text(encoding="utf-8"))
+    assert (
+        rendered["benchmarks"]["questions"][0]["evaluation_note"] == "Make no errors."
+    )
     assert compile_definition(output_path).model_dump(exclude_none=True) == expected
 
 

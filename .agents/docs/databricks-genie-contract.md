@@ -13,6 +13,7 @@ establish observed shape but not requiredness.
 - [Use the Genie Agents API](https://docs.databricks.com/aws/en/genie-agents/conversation-api), retrieved 2026-07-15.
 - [Create Genie Space](https://docs.databricks.com/api/workspace/genie/createspace), retrieved 2026-07-15.
 - [Get Genie Space](https://docs.databricks.com/api/workspace/genie/getspace), retrieved 2026-07-15.
+- Live Get Genie Space response supplied for the `evaluation_note` compatibility case, observed 2026-08-04.
 - [Update Genie Space](https://docs.databricks.com/api/workspace/genie/updatespace), retrieved 2026-07-15.
 - [Bundle Genie resource](https://docs.databricks.com/gcp/en/dev-tools/bundles/resources#genie_space), retrieved 2026-07-15.
 - [Official Genie bundle example](https://github.com/databricks/bundle-examples/tree/main/knowledge_base/genie_space_nyc_taxi), retrieved 2026-07-15.
@@ -110,6 +111,7 @@ establish observed shape but not requiredness.
 | `benchmarks.questions[].answer` | object-list | required | exactly one item | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `benchmarks.questions[].answer[].format` | string scalar | required | exactly `SQL` | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `benchmarks.questions[].answer[].content` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each; SQL length unknown | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].evaluation_note` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | observed | <https://docs.databricks.com/aws/en/genie-agents/conversation-api>; live Get Genie Space response supplied for the compatibility case, observed 2026-08-04 |
 <!-- matrix:end -->
 
 ## Upstream contradictions
@@ -145,7 +147,8 @@ rendered JSON uses the documented sort key.
 ## Phase 4 compatibility decisions
 
 The centralized model covers every version 2 field in the current official
-Create, Get, Update, and serialized-definition examples. The compact
+Create, Get, Update, and serialized-definition examples, plus observed fields
+from live Get responses recorded in this matrix. The compact
 `phase4_supported` fixture pins every field that was deferred in Phase 1 and
 round-trips it through JSON and YAML without loss.
 

@@ -55,6 +55,7 @@ TEXTUAL_STRING_LIST_PATHS = frozenset(
         ("instructions", "sql_snippets", "measures", "[]", "comment"),
         ("instructions", "sql_snippets", "measures", "[]", "instruction"),
         ("benchmarks", "questions", "[]", "question"),
+        ("benchmarks", "questions", "[]", "evaluation_note"),
         ("benchmarks", "questions", "[]", "answer", "[]", "content"),
     },
 )
