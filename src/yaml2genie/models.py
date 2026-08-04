@@ -128,7 +128,7 @@ class TextInstructionInput(StrictModel):
 
 
 class ParameterDefaultValueInput(StrictModel):
-    values: StringList | None = None
+    values: StringList | None = Field(default=None, max_length=1)
 
 
 class ExampleSqlParameterInput(StrictModel):
@@ -227,6 +227,7 @@ class BenchmarkQuestionInput(StrictModel):
     stable_key: NonEmptyBoundedString | None = None
     question: StringList | None = None
     answer: list[BenchmarkAnswerInput] = Field(min_length=1, max_length=1)
+    evaluation_note: StringList | None = None
 
 
 class BenchmarksInput(StrictModel):
@@ -310,7 +311,7 @@ class TextInstruction(StrictModel):
 
 
 class ParameterDefaultValue(StrictModel):
-    values: list[BoundedString] | None = Field(default=None, max_length=MAX_ITEMS)
+    values: list[BoundedString] | None = Field(default=None, max_length=1)
 
 
 class ExampleSqlParameter(StrictModel):
@@ -416,6 +417,10 @@ class BenchmarkQuestion(StrictModel):
     id: GenieId
     question: list[BoundedString] | None = Field(default=None, max_length=MAX_ITEMS)
     answer: list[BenchmarkAnswer] = Field(min_length=1, max_length=1)
+    evaluation_note: list[BoundedString] | None = Field(
+        default=None,
+        max_length=MAX_ITEMS,
+    )
 
 
 class Benchmarks(StrictModel):

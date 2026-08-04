@@ -36,7 +36,7 @@ def test_all_supported_fields_compile_to_expected_definition() -> None:
     assert definition.model_dump(exclude_none=True) == expected
 
 
-def test_all_documented_v2_fields_compile_to_expected_definition() -> None:
+def test_all_supported_v2_fields_compile_to_expected_definition() -> None:
     expected = json.loads(
         (FIXTURE_ROOT / "artifacts/phase4_supported.json").read_text(
             encoding="utf-8",

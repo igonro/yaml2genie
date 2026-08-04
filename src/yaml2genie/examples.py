@@ -123,7 +123,8 @@ COMPLETE_EXAMPLE_JSON: Final = """{
                             "SELECT AVG(order_amount) FROM sales.analytics.orders"
                         ]
                     }
-                ]
+                ],
+                "evaluation_note": ["Make no errors."]
             }
         ]
     }

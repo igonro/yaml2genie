@@ -13,10 +13,14 @@ establish observed shape but not requiredness.
 - [Use the Genie Agents API](https://docs.databricks.com/aws/en/genie-agents/conversation-api), retrieved 2026-07-15.
 - [Create Genie Space](https://docs.databricks.com/api/workspace/genie/createspace), retrieved 2026-07-15.
 - [Get Genie Space](https://docs.databricks.com/api/workspace/genie/getspace), retrieved 2026-07-15.
+- Live Get Genie Space response supplied for the `evaluation_note` compatibility case, observed 2026-08-04.
 - [Update Genie Space](https://docs.databricks.com/api/workspace/genie/updatespace), retrieved 2026-07-15.
 - [Bundle Genie resource](https://docs.databricks.com/gcp/en/dev-tools/bundles/resources#genie_space), retrieved 2026-07-15.
 - [Official Genie bundle example](https://github.com/databricks/bundle-examples/tree/main/knowledge_base/genie_space_nyc_taxi), retrieved 2026-07-15.
 - [Databricks CLI file inlining](https://github.com/databricks/cli/blob/main/bundle/config/mutator/resourcemutator/configure_genie_space_serialized_space.go), retrieved 2026-07-15.
+- Live deployment error for the example-parameter default-value limit, observed
+  2026-08-04.
+- Databricks UI and CLI observations for Common questions, observed 2026-08-04.
 
 ## Matrix conventions
 
@@ -76,7 +80,7 @@ establish observed shape but not requiredness.
 | `instructions.example_question_sqls[].parameters[].type_hint` | string scalar | unknown | 25,000 characters | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.example_question_sqls[].parameters[].description` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.example_question_sqls[].parameters[].default_value` | object | unknown | n/a | n/a | none stated | none | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
-| `instructions.example_question_sqls[].parameters[].default_value.values` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `instructions.example_question_sqls[].parameters[].default_value.values` | string-list (bounded) | unknown | at most one item; 25,000 characters each | n/a | none stated | scalar -> one item | supported | observed | <https://docs.databricks.com/aws/en/genie-agents/conversation-api>; live deployment error, 2026-08-04 |
 | `instructions.example_question_sqls[].usage_guidance` | string-list (bounded) | optional | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_functions` | object-list (bounded) | unknown | at most 10,000 items | `(id, identifier)` | instruction IDs across every instruction category | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `instructions.sql_functions[].id` | string scalar | unknown | ID format inferred from sorting and uniqueness rules | parent collection | instruction IDs across every instruction category | none | supported | inferred | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
@@ -110,6 +114,7 @@ establish observed shape but not requiredness.
 | `benchmarks.questions[].answer` | object-list | required | exactly one item | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `benchmarks.questions[].answer[].format` | string scalar | required | exactly `SQL` | n/a | none stated | none | supported | documented | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
 | `benchmarks.questions[].answer[].content` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each; SQL length unknown | n/a | none stated | scalar -> one item | supported | example-only | <https://docs.databricks.com/aws/en/genie-agents/conversation-api> |
+| `benchmarks.questions[].evaluation_note` | string-list (bounded) | unknown | at most 10,000 items; 25,000 characters each | n/a | none stated | scalar -> one item | supported | observed | <https://docs.databricks.com/aws/en/genie-agents/conversation-api>; live Get Genie Space response supplied for the compatibility case, observed 2026-08-04 |
 <!-- matrix:end -->
 
 ## Upstream contradictions
@@ -124,6 +129,15 @@ establish observed shape but not requiredness.
   [primary page](https://docs.databricks.com/aws/en/genie-agents/conversation-api),
   but are omitted from its explicit ID-required list. Their ID requiredness
   remains `unknown`; Phase 1 rejects the entire deferred category.
+
+## Current transport limitation
+
+The UI exposes an `Agent` checkbox for each Common question. Current serialized
+definitions returned through the Databricks CLI include the question list but
+not that checkbox state. `config.sample_questions` therefore preserves the
+questions but cannot preserve or configure their `Agent` setting. yaml2genie
+intentionally rejects an invented `agent` field until Databricks returns a
+documented serialized representation for it.
 
 ## Frozen Phase 1 decisions
 
@@ -145,7 +159,8 @@ rendered JSON uses the documented sort key.
 ## Phase 4 compatibility decisions
 
 The centralized model covers every version 2 field in the current official
-Create, Get, Update, and serialized-definition examples. The compact
+Create, Get, Update, and serialized-definition examples, plus observed fields
+from live Get responses recorded in this matrix. The compact
 `phase4_supported` fixture pins every field that was deferred in Phase 1 and
 round-trips it through JSON and YAML without loss.
 
