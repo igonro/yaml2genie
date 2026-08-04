@@ -1,5 +1,6 @@
 import json
 import re
+from importlib.metadata import version as package_version
 from pathlib import Path
 
 import pytest
@@ -229,7 +230,7 @@ def test_version_output() -> None:
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert result.stdout == "yaml2genie 0.1.0\n"
+    assert result.stdout == f"yaml2genie {package_version('yaml2genie')}\n"
 
 
 def test_quiet_suppresses_success_message() -> None:
