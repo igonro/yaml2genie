@@ -65,6 +65,31 @@ def test_only_one_text_instruction_is_allowed(tmp_path: Path) -> None:
         compile_definition(_write_yaml(tmp_path, source))
 
 
+def test_example_parameter_default_accepts_at_most_one_value(tmp_path: Path) -> None:
+    source = {
+        "version": 2,
+        "instructions": {
+            "example_question_sqls": [
+                {
+                    "parameters": [
+                        {
+                            "default_value": {
+                                "values": ["first", "second"],
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+    }
+
+    with pytest.raises(
+        ValidationError,
+        match=r"instructions.example_question_sqls.0.parameters.0.default_value.values",
+    ):
+        compile_definition(_write_yaml(tmp_path, source))
+
+
 @pytest.mark.parametrize("sql", [[], [""], ["   "]])
 def test_sql_snippet_content_must_not_be_empty(
     tmp_path: Path,

@@ -74,6 +74,11 @@ files such as `sources/tables.yaml` and `instructions/text_instructions.yaml`.
 Edit those YAML files, rebuild `genie.lock.json`, and review both source and
 generated changes together.
 
+`config.sample_questions` represents the UI's Common questions. The UI's
+per-question `Agent` checkbox is not included in current serialized definitions
+returned by the Databricks CLI, so yaml2genie cannot preserve or configure that
+setting during import and deployment.
+
 ### Start without an existing Agent
 
 Generate a complete supported version-2 JSON example, then decompile it into
@@ -132,9 +137,15 @@ resources:
     genie_spaces:
         sales_assistant:
             title: Sales Assistant
+            description: Sales analytics Genie Agent
             warehouse_id: ${var.warehouse_id}
             file_path: genie.lock.json
 ```
+
+The UI's About fields map to DAB resource metadata: Name uses `title`,
+Description uses `description`, and Default warehouse uses `warehouse_id`.
+They are not fields in the serialized YAML definition. Each example-query
+parameter may have at most one default value.
 
 Validate before deploying, ideally first to a non-production target:
 

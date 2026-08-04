@@ -128,7 +128,7 @@ class TextInstructionInput(StrictModel):
 
 
 class ParameterDefaultValueInput(StrictModel):
-    values: StringList | None = None
+    values: StringList | None = Field(default=None, max_length=1)
 
 
 class ExampleSqlParameterInput(StrictModel):
@@ -311,7 +311,7 @@ class TextInstruction(StrictModel):
 
 
 class ParameterDefaultValue(StrictModel):
-    values: list[BoundedString] | None = Field(default=None, max_length=MAX_ITEMS)
+    values: list[BoundedString] | None = Field(default=None, max_length=1)
 
 
 class ExampleSqlParameter(StrictModel):
