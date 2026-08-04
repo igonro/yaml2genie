@@ -2,12 +2,35 @@
 
 All notable changes to yaml2genie are documented here.
 
-## [0.1.0] - Unreleased
+## v0.2.0 (2026-08-04)
 
-- Compile centralized and explicitly decentralized YAML layouts into deterministic serialized Agent JSON.
-- Decompile serialized Agent JSON into centralized, grouped, category-split, fully-split, and mixed YAML layouts.
-- Make decompiled YAML human-readable by default with `--pretty`; `--raw` retains validated imported string-array boundaries and CRLF.
-- Add `decompile --omit-ids` for editable YAML that regenerates deterministic IDs during build.
-- Validate version 2 fields, IDs, ordering, uniqueness, references, documented limits, and bundle-compatible output.
-- Report source, schema, semantic, output, and stale-artifact failures with stable CLI exit codes.
-- Enforce a 90 percent test coverage floor and document contributor and release workflows.
+### Feat
+
+- support benchmark evaluation notes
+
+### Fix
+
+- validate single example query parameter defaults, document other limitations
+
+## v0.1.0 (2026-07-16)
+
+### Feat
+
+- implement deterministic ID generation with collection and source order
+- **decompile**: add human-readable YAML rendering
+- support Genie Agent adoption workflow
+- implement GitHub Actions for CI workflow
+- ship production yaml2genie CLI
+- support fully decentralized Genie layouts
+- load grouped Genie YAML layouts
+- support documented Genie schema v2
+- decompile Genie JSON to centralized YAML
+- normalize and validate Genie definitions
+- compile centralized Genie YAML
+- initialize project skeleton
+
+### Fix
+
+- **tests**: remove ANSI escape codes from help text output
+- describe CLI commands in help
+- update version to use package metadata

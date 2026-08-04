@@ -1,6 +1,6 @@
 [project]
 name = "yaml2genie"
-version = "0.1.0"
+version = "0.2.0"
 description = "Compile centralized YAML into Databricks Genie Agent JSON"
 readme = "README.md"
 authors = [
